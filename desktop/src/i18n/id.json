@@ -42,5 +42,9 @@
   "register_mcp": "Daftarkan Server MCP",
   "search_tools": "Cari Tool Eksternal...",
   "model_provider": "Penyedia Model & LLM Gateway",
-  "api_keys": "Kunci API & Kredensial"
+  "api_keys": "Kunci API & Kredensial",
+  "device_detected": "Perangkat Anda Terdeteksi",
+  "download_for_device": "Unduh untuk Perangkat Ini",
+  "all_devices_downloads": "Tautan Unduhan Semua Perangkat",
+  "auto_update_notice": "Tautan unduhan otomatis tersinkronisasi saat ada rilis pembaruan kode terbaru."
 }

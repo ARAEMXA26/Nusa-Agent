@@ -42,5 +42,9 @@
   "register_mcp": "Register MCP Server",
   "search_tools": "Search external tools...",
   "model_provider": "Model Provider & LLM Gateway",
-  "api_keys": "API Keys & Credentials"
+  "api_keys": "API Keys & Credentials",
+  "device_detected": "Detected Current Device",
+  "download_for_device": "Download for This Device",
+  "all_devices_downloads": "Available Device Downloads",
+  "auto_update_notice": "Download links automatically sync whenever new code releases are published."
 }

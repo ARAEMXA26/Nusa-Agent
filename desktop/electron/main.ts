@@ -6,6 +6,10 @@ import { registerUpdaterIpc } from './updater';
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
+  const iconPath = process.platform === 'win32'
+    ? path.join(__dirname, '../build/icon.ico')
+    : path.join(__dirname, '../build/icon.png');
+
   mainWindow = new BrowserWindow({
     width: 1300,
     height: 850,
@@ -13,6 +17,7 @@ function createWindow() {
     minHeight: 650,
     backgroundColor: '#0a0a0a',
     titleBarStyle: 'hiddenInset',
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -47,6 +52,14 @@ ipcMain.on('openDirectoryDialog', async (event: any) => {
 });
 
 app.whenReady().then(async () => {
+  if (process.platform === 'darwin' && app.dock) {
+    try {
+      const dockIconPath = path.join(__dirname, '../build/icon.png');
+      app.dock.setIcon(dockIconPath);
+    } catch {
+      // Ignore if dock icon cannot be set
+    }
+  }
   await startGatewayProcess();
   createWindow();
 });

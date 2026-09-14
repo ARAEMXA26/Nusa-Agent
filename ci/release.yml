@@ -2,13 +2,23 @@ name: Release Nusa Agent Multi-Platform
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Release Tag (e.g. v0.1.1)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
 
 jobs:
   build:
-    name: Build ${{ matrix.os }} (${{ matrix.arch }})
+    name: Build ${{ matrix.target }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -27,6 +37,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -41,7 +53,7 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install Gateway Dependencies & Run Pytest
+      - name: Install Gateway Dependencies & Run Tests
         run: |
           cd gateway
           python -m pip install --upgrade pip
@@ -53,19 +65,19 @@ jobs:
           cd desktop
           npm ci
 
-      - name: Build Desktop Frontend & Electron
+      - name: Build Desktop Application & Electron
         run: |
           cd desktop
           npm run build
 
-      - name: Package Desktop Artifacts (${{ matrix.target }})
+      - name: Package Multi-Platform Artifacts (${{ matrix.target }})
         run: |
           cd desktop
           npx electron-builder --${{ matrix.target }} --config electron-builder.json
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Release Artifacts
+      - name: Upload Platform Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: nusa-agent-${{ matrix.target }}-${{ matrix.arch }}
@@ -79,10 +91,9 @@ jobs:
           if-no-files-found: warn
 
   publish:
-    name: Publish GitHub Release
+    name: Publish or Update GitHub Release
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
 
@@ -90,7 +101,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download all built artifacts
+      - name: Determine Release Tag & Version
+        id: release_info
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          elif [[ -n "${{ github.event.inputs.version_tag }}" ]]; then
+            TAG="${{ github.event.inputs.version_tag }}"
+          else
+            # Continuous Delivery on main branch push: sync latest release
+            TAG="v$(node -p "require('./desktop/package.json').version")"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Target Release Tag: $TAG"
+
+      - name: Download all platform artifacts
         uses: actions/download-artifact@v4
         with:
           path: release-artifacts
@@ -98,12 +123,14 @@ jobs:
       - name: Generate Checksums Manifest
         run: |
           cd release-artifacts
-          find . -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" \) -exec sha256sum {} + > checksums.txt
+          find . -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.tar.gz" \) -exec sha256sum {} + > checksums.txt
           cat checksums.txt
 
-      - name: Create GitHub Release
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: "Nusa Agent ${{ steps.release_info.outputs.tag }} — Multi-Platform Production"
           files: |
             release-artifacts/**/*
           generate_release_notes: true

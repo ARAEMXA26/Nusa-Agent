@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Project } from '../types/protocol';
 import { useI18n } from '../i18n';
+import nusaLogo from '../assets/logo.png';
 import { 
   FolderGit2, 
   ListTodo, 
   Settings, 
   Globe2, 
-  ShieldCheck, 
   FolderPlus,
   Sparkles,
   Network,
@@ -68,8 +68,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Brand Header */}
       <div className="p-4 border-b border-neutral-800 flex items-center justify-between">
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-600/30">
-            <ShieldCheck className="w-5 h-5 text-indigo-200" />
+          <div className="w-8 h-8 rounded-lg bg-neutral-950 border border-neutral-800 flex items-center justify-center p-1 shadow-md shadow-indigo-500/10 shrink-0">
+            <img src={nusaLogo} alt="Nusa Agent Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="font-semibold text-sm text-neutral-100 tracking-tight">Nusa Agent</h1>
