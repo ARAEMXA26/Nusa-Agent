@@ -12,7 +12,8 @@ import {
   Play, 
   StopCircle,
   Clock,
-  Compass
+  Compass,
+  ArrowLeft
 } from 'lucide-react';
 
 interface TaskTimelineProps {
@@ -20,6 +21,7 @@ interface TaskTimelineProps {
   onSteer: (message: string) => void;
   onCancel: () => void;
   onCreateTask: (goal: string) => void;
+  onBackToDashboard?: () => void;
 }
 
 export const TaskTimeline: React.FC<TaskTimelineProps> = ({
@@ -27,6 +29,7 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
   onSteer,
   onCancel,
   onCreateTask,
+  onBackToDashboard,
 }) => {
   const { t } = useI18n();
   const [steerInput, setSteerInput] = useState('');
@@ -82,6 +85,33 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full bg-neutral-950">
+      {/* Active Task Navigation Header */}
+      <div className="bg-neutral-900/90 border-b border-neutral-800 px-5 py-2.5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {onBackToDashboard && (
+            <button
+              onClick={onBackToDashboard}
+              className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-indigo-300 transition-colors px-2.5 py-1 rounded-md bg-neutral-800/80 hover:bg-neutral-800 border border-neutral-700/60"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Command Center</span>
+            </button>
+          )}
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-xs text-neutral-200">Misi Aktif</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 font-mono">
+              #{activeTask.id.slice(0, 8)}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] px-2 py-0.5 rounded font-semibold uppercase bg-indigo-950/80 text-indigo-400 border border-indigo-800/50">
+            {activeTask.status}
+          </span>
+        </div>
+      </div>
+
       {/* Messages & Tool Activity Stream */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {/* Goal Card */}

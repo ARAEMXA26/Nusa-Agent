@@ -12,7 +12,8 @@ import {
   Network,
   Globe,
   Brain,
-  Package
+  Package,
+  LayoutDashboard
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ interface SidebarProps {
   tasks: any[];
   activeTaskId: string | null;
   onSelectTask: (taskId: string) => void;
+  onSelectDashboard: () => void;
   onCreateProject: (name: string, path: string) => void;
   onOpenSettings: () => void;
   onOpenSkills: () => void;
@@ -40,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   tasks,
   activeTaskId,
   onSelectTask,
+  onSelectDashboard,
   onCreateProject,
   onOpenSettings,
   onOpenSkills,
@@ -65,8 +68,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="w-72 bg-neutral-900/90 border-r border-neutral-800 flex flex-col h-screen select-none">
-      {/* Brand Header */}
-      <div className="p-4 border-b border-neutral-800 flex items-center justify-between">
+      {/* Brand Header with macOS Titlebar Clearance */}
+      <div className="pt-8 pb-3.5 px-4 border-b border-neutral-800 flex items-center justify-between">
         <div className="flex items-center space-x-2.5">
           <div className="w-8 h-8 rounded-lg bg-neutral-950 border border-neutral-800 flex items-center justify-center p-1 shadow-md shadow-indigo-500/10 shrink-0">
             <img src={nusaLogo} alt="Nusa Agent Logo" className="w-full h-full object-contain" />
@@ -84,6 +87,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title={connected ? t('connected') : t('disconnected')}
           />
         </div>
+      </div>
+
+      {/* Command Center Hub Quick Switcher */}
+      <div className="p-2.5 border-b border-neutral-800/80">
+        <button
+          onClick={onSelectDashboard}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+            !activeTaskId
+              ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
+              : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/60 border border-transparent'
+          }`}
+        >
+          <LayoutDashboard className="w-4 h-4 text-indigo-400 shrink-0" />
+          <div className="flex-1 text-left flex items-center justify-between">
+            <span>Command Center Hub</span>
+            {!activeTaskId && (
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+            )}
+          </div>
+        </button>
       </div>
 
       {/* Projects Section */}

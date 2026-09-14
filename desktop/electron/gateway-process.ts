@@ -1,4 +1,4 @@
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, spawnSync, ChildProcess } from 'child_process';
 import path from 'path';
 import http from 'http';
 import fs from 'fs';
@@ -70,42 +70,76 @@ function findGatewayWorkingDir(): string | null {
   return null;
 }
 
+function testPythonHasUvicorn(pythonPath: string): boolean {
+  try {
+    const res = spawnSync(pythonPath, ['-c', 'import uvicorn'], { timeout: 2000, encoding: 'utf-8' });
+    return res.status === 0;
+  } catch {
+    return false;
+  }
+}
+
 function findPythonBinary(gatewayDir: string | null): string | null {
-  // Check virtualenv inside gatewayDir first
+  const home = process.env.HOME || process.env.USERPROFILE || '';
+  const discovered: string[] = [];
+
+  // 1. Check virtualenvs
   if (gatewayDir) {
     const venvPython = process.platform === 'win32'
       ? path.join(gatewayDir, '.venv', 'Scripts', 'python.exe')
       : path.join(gatewayDir, '.venv', 'bin', 'python');
     if (fs.existsSync(venvPython)) {
-      return venvPython;
+      if (testPythonHasUvicorn(venvPython)) return venvPython;
+      discovered.push(venvPython);
     }
   }
 
-  // Check system python candidates
+  const commonVenvs = [
+    path.join(home, 'Documents/AGENT/CODE/gateway/.venv/bin/python'),
+    path.join(home, '.virtualenvs/nusa/bin/python'),
+    path.join(home, '.local/share/uv/tools/browser-use/bin/python'),
+  ];
+  for (const v of commonVenvs) {
+    if (fs.existsSync(v)) {
+      if (testPythonHasUvicorn(v)) return v;
+      discovered.push(v);
+    }
+  }
+
+  // 2. Check system candidates
   const candidates = process.platform === 'win32'
     ? ['python.exe', 'py.exe']
     : [
+        '/Library/Frameworks/Python.framework/Versions/3.10/bin/python3',
+        '/Library/Frameworks/Python.framework/Versions/3.11/bin/python3',
+        '/Library/Frameworks/Python.framework/Versions/3.12/bin/python3',
         '/opt/homebrew/bin/python3',
+        'python3',
         '/usr/local/bin/python3',
         '/usr/bin/python3',
-        'python3',
         'python',
       ];
 
   for (const cmd of candidates) {
     if (cmd.startsWith('/') || cmd.includes('\\')) {
-      if (fs.existsSync(cmd)) return cmd;
+      if (fs.existsSync(cmd)) {
+        if (testPythonHasUvicorn(cmd)) return cmd;
+        discovered.push(cmd);
+      }
     } else {
-      // Relative command — look up in PATH
       const paths = (process.env.PATH || '').split(path.delimiter);
       for (const p of paths) {
         const full = path.join(p, cmd);
-        if (fs.existsSync(full)) return full;
+        if (fs.existsSync(full)) {
+          if (testPythonHasUvicorn(full)) return full;
+          discovered.push(full);
+        }
       }
     }
   }
 
-  return null;
+  // Fallback to first existing python if no uvicorn was found
+  return discovered[0] || null;
 }
 
 export async function startGatewayProcess(): Promise<void> {

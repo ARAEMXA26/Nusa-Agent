@@ -3,7 +3,14 @@
 import asyncio
 import logging
 from typing import Any
-from playwright.async_api import async_playwright, Browser, BrowserContext, Page, Playwright
+try:
+    from playwright.async_api import async_playwright, Browser, BrowserContext, Page, Playwright
+except ImportError:
+    async_playwright = None
+    Browser = Any  # type: ignore
+    BrowserContext = Any  # type: ignore
+    Page = Any  # type: ignore
+    Playwright = Any  # type: ignore
 from nusa.browser.security import BrowserSecurity, BrowserSecurityError
 from nusa.browser.dom_snapshot import DOMSnapshotEngine
 
@@ -29,6 +36,8 @@ class BrowserManager:
             return self._page
 
         if not self._playwright:
+            if async_playwright is None:
+                raise BrowserSecurityError("Playwright is not installed. Install with: pip install playwright && playwright install chromium")
             self._playwright = await async_playwright().start()
 
         if not self._browser:

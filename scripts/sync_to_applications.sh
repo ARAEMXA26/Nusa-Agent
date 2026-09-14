@@ -45,6 +45,9 @@ else
     if [ -d "$GATEWAY_RES" ]; then
         rsync -a --delete --exclude="__pycache__" --exclude=".pytest_cache" --exclude=".venv" \
             "$ROOT_DIR/gateway/" "$GATEWAY_RES/"
+        if [ -d "$ROOT_DIR/gateway/.venv" ]; then
+            ln -sfn "$ROOT_DIR/gateway/.venv" "$GATEWAY_RES/.venv"
+        fi
     fi
 fi
 

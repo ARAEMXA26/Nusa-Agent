@@ -13,6 +13,8 @@ import { BrowserSandboxModal } from './components/BrowserSandboxModal';
 import { MemoryAndSchedulerModal } from './components/MemoryAndSchedulerModal';
 import { PluginMarketplaceModal } from './components/PluginMarketplaceModal';
 
+import { CommandCenterDashboard } from './components/CommandCenterDashboard';
+
 export const App: React.FC = () => {
   const {
     connected,
@@ -31,6 +33,7 @@ export const App: React.FC = () => {
     respondApproval,
   } = useGateway();
 
+  const [viewMode, setViewMode] = useState<'dashboard' | 'task'>('dashboard');
   const [showSettings, setShowSettings] = useState(false);
   const [showSkills, setShowSkills] = useState(false);
   const [showMcp, setShowMcp] = useState(false);
@@ -49,6 +52,32 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  const handleSelectTask = (taskId: string) => {
+    fetchTaskDetail(taskId);
+    setViewMode('task');
+  };
+
+  const handleSelectDashboard = () => {
+    setViewMode('dashboard');
+  };
+
+  const handleCreateTask = async (goal: string) => {
+    let projId = activeProject?.id;
+    if (!projId) {
+      if (projects.length > 0) {
+        projId = projects[0].id;
+        setActiveProject(projects[0]);
+      } else {
+        const created = await createProject('Workspace', '/Users/ariardianto/Documents/AGENT');
+        projId = created.id;
+      }
+    }
+    if (projId) {
+      await createTask(projId, goal);
+      setViewMode('task');
+    }
+  };
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-neutral-950 font-sans text-neutral-100 antialiased">
       {/* Sidebar */}
@@ -58,8 +87,9 @@ export const App: React.FC = () => {
         activeProject={activeProject}
         setActiveProject={setActiveProject}
         tasks={tasks}
-        activeTaskId={activeTask?.id || null}
-        onSelectTask={(taskId) => fetchTaskDetail(taskId)}
+        activeTaskId={viewMode === 'task' ? activeTask?.id || null : null}
+        onSelectTask={handleSelectTask}
+        onSelectDashboard={handleSelectDashboard}
         onCreateProject={(name, path) => createProject(name, path)}
         onOpenSettings={() => setShowSettings(true)}
         onOpenSkills={() => setShowSkills(true)}
@@ -70,30 +100,52 @@ export const App: React.FC = () => {
       />
 
       {/* Main Workspace Area */}
-      <main className="flex-1 flex flex-col h-screen min-w-0">
-        {/* Agent Status Bar */}
-        <AgentManager
-          activeTask={activeTask}
-          onCancelTask={activeTask ? () => cancelTask(activeTask.id) : undefined}
+      {viewMode === 'dashboard' || !activeTask ? (
+        <CommandCenterDashboard
+          connected={connected}
+          projects={projects}
+          activeProject={activeProject}
+          setActiveProject={setActiveProject}
+          tasks={tasks}
+          onSelectTask={handleSelectTask}
+          onCreateTask={handleCreateTask}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenSkills={() => setShowSkills(true)}
+          onOpenMcp={() => setShowMcp(true)}
+          onOpenBrowser={() => setShowBrowser(true)}
+          onOpenMemory={() => setShowMemory(true)}
+          onOpenPlugins={() => setShowPlugins(true)}
+          onOpenNewProjectModal={() => setShowSettings(true)}
         />
+      ) : (
+        <>
+          <main className="flex-1 flex flex-col h-screen min-w-0">
+            {/* Agent Status Bar */}
+            <AgentManager
+              activeTask={activeTask}
+              onCancelTask={activeTask ? () => cancelTask(activeTask.id) : undefined}
+            />
 
-        {/* Approvals Inbox (Visible if any pending approvals) */}
-        <ApprovalsInbox
-          approvals={approvals}
-          onRespond={(apprId, decision) => respondApproval(apprId, decision)}
-        />
+            {/* Approvals Inbox (Visible if any pending approvals) */}
+            <ApprovalsInbox
+              approvals={approvals}
+              onRespond={(apprId, decision) => respondApproval(apprId, decision)}
+            />
 
-        {/* Task Timeline & Steering */}
-        <TaskTimeline
-          activeTask={activeTask}
-          onSteer={(msg) => activeTask && steerTask(activeTask.id, msg)}
-          onCancel={() => activeTask && cancelTask(activeTask.id)}
-          onCreateTask={(goal) => activeProject && createTask(activeProject.id, goal)}
-        />
-      </main>
+            {/* Task Timeline & Steering */}
+            <TaskTimeline
+              activeTask={activeTask}
+              onSteer={(msg) => activeTask && steerTask(activeTask.id, msg)}
+              onCancel={() => activeTask && cancelTask(activeTask.id)}
+              onCreateTask={(goal) => activeProject && createTask(activeProject.id, goal)}
+              onBackToDashboard={handleSelectDashboard}
+            />
+          </main>
 
-      {/* Right-side Artifact & Verification Panel */}
-      <ArtifactPanel artifacts={artifacts} />
+          {/* Right-side Artifact & Verification Panel */}
+          <ArtifactPanel artifacts={artifacts} />
+        </>
+      )}
 
       {/* Modals */}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
