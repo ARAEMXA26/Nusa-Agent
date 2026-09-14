@@ -7,12 +7,14 @@
     "output": "dist-release",
     "buildResources": "build"
   },
+  "afterPack": "./build/after-pack.cjs",
   "files": [
     "dist/**/*",
     "dist-electron/**/*",
     "package.json"
   ],
   "mac": {
+    "identity": null,
     "target": [
       {
         "target": "dmg",
@@ -24,10 +26,8 @@
       }
     ],
     "category": "public.app-category.developer-tools",
-    "hardenedRuntime": true,
+    "hardenedRuntime": false,
     "gatekeeperAssess": false,
-    "entitlements": "build/entitlements.mac.plist",
-    "entitlementsInherit": "build/entitlements.mac.plist",
     "artifactName": "Nusa-Agent-${version}-mac-${arch}.${ext}"
   },
   "dmg": {
