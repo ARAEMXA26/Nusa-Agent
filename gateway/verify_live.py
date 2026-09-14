@@ -102,6 +102,46 @@ async def run_live_verification():
             assert "return a + b" in final_code, "Bug was not fixed in disk file!"
             print("[SUCCESS] All Phase 1 assertions verified on live server!")
 
+            # 8. Phase 2 Verification: Progressive Skills Catalog & MCP
+            print("\n=== VERIFYING PHASE 2 (SKILLS & MCP) ===")
+            skills_req = urllib.request.Request(f"{BASE_URL}/api/skills")
+            with urllib.request.urlopen(skills_req) as resp:
+                skills = json.loads(resp.read().decode())
+            print(f"[OK] Discovered {len(skills)} skills:")
+            for s in skills:
+                print(f"     - Skill: {s['name']} (v{s['version']}, safety={s['scan_result']['passed']})")
+
+            # Check low-token summary
+            sum_req = urllib.request.Request(f"{BASE_URL}/api/skills/summary")
+            with urllib.request.urlopen(sum_req) as resp:
+                summary = json.loads(resp.read().decode())
+            print(f"[OK] Progressive summary contains {len(summary)} active skills (low-token context).")
+
+            # Start reference MCP server and search tools
+            start_mcp_req = urllib.request.Request(
+                f"{BASE_URL}/api/mcp/servers/ref-local-01/start",
+                data=b"{}",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(start_mcp_req) as resp:
+                start_res = json.loads(resp.read().decode())
+            print(f"[OK] Started MCP Server: {start_res['server_id']}")
+
+            # Search MCP tools
+            search_req = urllib.request.Request(
+                f"{BASE_URL}/api/mcp/tools/search",
+                data=json.dumps({"query": "hash", "limit": 5}).encode(),
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(search_req) as resp:
+                tools_res = json.loads(resp.read().decode())
+            print(f"[OK] MCP Deferred Search returned {len(tools_res)} matching tools:")
+            for t in tools_res:
+                print(f"     - Tool: {t['name']} (server: {t['server_name']})")
+            assert any(t["name"] == "mcp_hash_calculator" for t in tools_res)
+
+            print("[SUCCESS] All Phase 2 (Skills & MCP) assertions verified on live server!")
+
 
 if __name__ == "__main__":
     asyncio.run(run_live_verification())

@@ -13,6 +13,7 @@ from nusa.security.policy_engine import PolicyEngine, PolicyDecision
 from nusa.security.audit import log_audit_event
 from nusa.tools.registry import tool_registry
 from nusa.artifacts.manager import artifact_manager
+from nusa.skills.manager import skill_manager
 from nusa.providers.factory import get_provider
 
 
@@ -150,6 +151,18 @@ class TaskOrchestrator:
             "You have access to tools to inspect and modify files, run tests, and execute commands in the workspace. "
             "Always formulate a clear plan, read files before modifying them, and verify your changes with tests."
         )
+
+        skills_summary = skill_manager.get_progressive_summary(workspace_root)
+        if skills_summary:
+            skills_text = "\n".join(
+                f"- {s['name']}: {s['description']} (allowed tools: {s['allowed_tools']})"
+                for s in skills_summary
+            )
+            system_prompt += (
+                f"\n\nAvailable Skills (Progressive Catalog):\n{skills_text}\n"
+                "To activate any skill and receive full detailed instructions, invoke tool 'skill_activate' with {'skill_name': '<name>'}.\n"
+                "To search external MCP tools on demand, invoke tool 'tool_search_mcp' with {'query': '<capability>'}.\n"
+            )
 
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": system_prompt},

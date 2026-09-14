@@ -6,6 +6,8 @@ import { ApprovalsInbox } from './components/ApprovalsInbox';
 import { TaskTimeline } from './components/TaskTimeline';
 import { ArtifactPanel } from './components/ArtifactPanel';
 import { SettingsModal } from './components/SettingsModal';
+import { SkillsManagerModal } from './components/SkillsManagerModal';
+import { McpManagerModal } from './components/McpManagerModal';
 
 export const App: React.FC = () => {
   const {
@@ -26,6 +28,8 @@ export const App: React.FC = () => {
   } = useGateway();
 
   const [showSettings, setShowSettings] = useState(false);
+  const [showSkills, setShowSkills] = useState(false);
+  const [showMcp, setShowMcp] = useState(false);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-neutral-950 font-sans text-neutral-100 antialiased">
@@ -40,6 +44,8 @@ export const App: React.FC = () => {
         onSelectTask={(taskId) => fetchTaskDetail(taskId)}
         onCreateProject={(name, path) => createProject(name, path)}
         onOpenSettings={() => setShowSettings(true)}
+        onOpenSkills={() => setShowSkills(true)}
+        onOpenMcp={() => setShowMcp(true)}
       />
 
       {/* Main Workspace Area */}
@@ -68,8 +74,10 @@ export const App: React.FC = () => {
       {/* Right-side Artifact & Verification Panel */}
       <ArtifactPanel artifacts={artifacts} />
 
-      {/* Settings Modal */}
+      {/* Modals */}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showSkills && <SkillsManagerModal onClose={() => setShowSkills(false)} />}
+      {showMcp && <McpManagerModal onClose={() => setShowMcp(false)} />}
     </div>
   );
 };

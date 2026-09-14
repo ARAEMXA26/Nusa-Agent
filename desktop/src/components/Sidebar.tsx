@@ -7,7 +7,9 @@ import {
   Settings, 
   Globe2, 
   ShieldCheck, 
-  FolderPlus
+  FolderPlus,
+  Sparkles,
+  Network
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -20,6 +22,8 @@ interface SidebarProps {
   onSelectTask: (taskId: string) => void;
   onCreateProject: (name: string, path: string) => void;
   onOpenSettings: () => void;
+  onOpenSkills: () => void;
+  onOpenMcp: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -32,6 +36,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectTask,
   onCreateProject,
   onOpenSettings,
+  onOpenSkills,
+  onOpenMcp,
 }) => {
   const { t, language, setLanguage } = useI18n();
   const [showNewProjModal, setShowNewProjModal] = useState(false);
@@ -66,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`w-2 h-2 rounded-full ${
               connected ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-rose-500 animate-pulse'
             }`}
-            title={connected ? t('status_connected') : t('status_disconnected')}
+            title={connected ? t('connected') : t('disconnected')}
           />
         </div>
       </div>
@@ -141,25 +147,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </div>
 
-      {/* Footer Controls: Language & Settings */}
-      <div className="p-3 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
-        <button
-          onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
-          className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-neutral-800 transition-colors"
-          title="Ganti Bahasa / Toggle Language"
-        >
-          <Globe2 className="w-4 h-4 text-indigo-400" />
-          <span className="font-semibold uppercase text-[11px]">{language}</span>
-        </button>
+      {/* Footer Controls: Skills, MCP, Language & Settings */}
+      <div className="p-2.5 border-t border-neutral-800 space-y-2">
+        <div className="grid grid-cols-2 gap-1.5 text-xs text-neutral-400">
+          <button
+            onClick={onOpenSkills}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-neutral-800/40 hover:bg-neutral-800 hover:text-indigo-300 transition-colors"
+            title={t('skills_hub')}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="truncate">{t('skills_hub')}</span>
+          </button>
 
-        <button
-          onClick={onOpenSettings}
-          className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-neutral-800 transition-colors"
-          title={t('settings')}
-        >
-          <Settings className="w-4 h-4 text-neutral-400 hover:text-neutral-200" />
-          <span>{t('settings')}</span>
-        </button>
+          <button
+            onClick={onOpenMcp}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-neutral-800/40 hover:bg-neutral-800 hover:text-emerald-300 transition-colors"
+            title={t('mcp_manager')}
+          >
+            <Network className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="truncate">{t('mcp_manager')}</span>
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-neutral-400 pt-1">
+          <button
+            onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+            className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-neutral-800 transition-colors"
+            title="Ganti Bahasa / Toggle Language"
+          >
+            <Globe2 className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="font-semibold uppercase text-[11px]">{language}</span>
+          </button>
+
+          <button
+            onClick={onOpenSettings}
+            className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-neutral-800 transition-colors"
+            title={t('settings')}
+          >
+            <Settings className="w-3.5 h-3.5 text-neutral-400 hover:text-neutral-200" />
+            <span>{t('settings')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Create Project Modal */}

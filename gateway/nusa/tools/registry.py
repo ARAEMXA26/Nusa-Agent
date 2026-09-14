@@ -11,6 +11,8 @@ from nusa.tools.file_tools import (
 from nusa.tools.test_tools import tool_run_test
 from nusa.tools.shell_tools import tool_shell_execute
 from nusa.tools.git_tools import tool_git_status, tool_git_diff
+from nusa.mcp.manager import mcp_manager
+from nusa.skills.manager import skill_manager
 
 
 class ToolParameter(BaseModel):
@@ -142,6 +144,36 @@ class ToolRegistry:
             parameters_schema={"type": "object", "properties": {}},
         )
 
+        self._tools["tool_search_mcp"] = ToolDefinition(
+            name="tool_search_mcp",
+            description="Search available MCP (Model Context Protocol) external tools on demand.",
+            parameters=[
+                ToolParameter(name="query", type="string", description="Keywords describing the tool capability to search for"),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Keywords describing the capability"}
+                },
+                "required": ["query"],
+            },
+        )
+
+        self._tools["skill_activate"] = ToolDefinition(
+            name="skill_activate",
+            description="Activate a specific skill from the progressive skills catalog to retrieve its full instructions.",
+            parameters=[
+                ToolParameter(name="skill_name", type="string", description="Exact name of the skill to activate"),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "skill_name": {"type": "string", "description": "Exact name of the skill to activate"}
+                },
+                "required": ["skill_name"],
+            },
+        )
+
     def get_tool_definitions(self) -> list[ToolDefinition]:
         return list(self._tools.values())
 
@@ -162,6 +194,26 @@ class ToolRegistry:
     async def execute_tool(
         self, workspace_root: str, tool_name: str, arguments: dict[str, Any]
     ) -> dict[str, Any]:
+        # Handle MCP Tools (mcp_* or dynamically discovered tools)
+        if tool_name.startswith("mcp_") or any(t.name == tool_name for t in mcp_manager.list_all_tools()):
+            try:
+                res = await mcp_manager.call_tool(tool_name, arguments)
+                return {"success": True, "result": res}
+            except Exception as e:
+                return {"success": False, "error": f"MCP execution error: {e}"}
+
+        if tool_name == "tool_search_mcp":
+            matches = mcp_manager.search_tools(arguments.get("query", ""))
+            return {
+                "success": True,
+                "matches": [m.model_dump() for m in matches],
+            }
+        elif tool_name == "skill_activate":
+            instructions = skill_manager.activate_skill_for_goal(arguments.get("skill_name", ""))
+            if instructions:
+                return {"success": True, "instructions": instructions}
+            return {"success": False, "error": f"Skill '{arguments.get('skill_name')}' not found or quarantined."}
+
         if tool_name not in self._tools:
             return {"success": False, "error": f"Tool '{tool_name}' not found in registry."}
 

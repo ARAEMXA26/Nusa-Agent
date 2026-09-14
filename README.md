@@ -9,24 +9,30 @@
 
 Nusa Agent adalah aplikasi desktop AI agent multi-platform (macOS, Windows, Linux) yang mengontrol pekerjaan otonom melalui pemisahan tegas antara **Desktop Shell** dan **Agent Gateway/Daemon**.
 
-### Fitur Utama MVP (Phase 0 & Phase 1 Selesai):
+### Fitur Utama (Phase 0, Phase 1 & Phase 2 Selesai):
 - **Local-First & Privacy Preserving**: Database SQLite dengan mode Write-Ahead Logging (`WAL`), data project, task, artifact, dan audit logs tersimpan sepenuhnya di perangkat lokal.
 - **Strict Security & Canonical Path Jail**: Setiap pembacaan, penulisan, dan patch file dibatasi di dalam root directory workspace proyek menggunakan resolving path kanonikal dan pencegahan symlink escape.
 - **Policy Engine (`DENY > ASK > ALLOW`)**:
   - `DENY`: Akses direktori di luar workspace proyek, traversal, atau perintah destruktif sistem.
-  - `ASK`: Modifikasi file (`file_patch`, `file_write`, `file_delete`), eksekusi shell, dan network calls memerlukan otorisasi eksplisit pengguna.
+  - `ASK`: Modifikasi file (`file_patch`, `file_write`, `file_delete`), eksekusi shell, and network calls memerlukan otorisasi eksplisit pengguna.
   - `ALLOW`: Operasi read-only dalam workspace (`file_read`, `file_list`, `git_status`).
 - **Human-in-the-loop Approvals**: Tampilan persetujuan real-time di UI dengan preview diff sebelum kode ditulis ke disk.
 - **Deterministic Verification Phase**: Agent tidak sekadar mengklaim pekerjaan selesai; agent menjalankan test suite nyata (`run_test`) dan memverifikasi keluaran sebelum menandai task sebagai `completed`.
 - **Artifact & Diff Review**: Visualisasi unified diff dengan pewarnaan penambahan/pengurangan kode dan tab laporan hasil test.
 - **Mid-turn Steering & Cancellation**: Pengguna dapat memberikan instruksi korektif di tengah eksekusi agent atau membatalkan pekerjaan kapan saja.
-- **Multi-Provider & Offline Fallback**:
-  - OpenAI (GPT-4o, GPT-4o-mini)
-  - Anthropic (Claude 3.5 Sonnet)
-  - Ollama (Model lokal seperti Llama 3.1)
-  - OpenRouter
-  - Deterministic Runner bawaan (untuk pengujian otomatis tanpa API key/koneksi internet)
-- **Bilingual Interface**: Antarmuka responsif Bahasa Indonesia dan English dengan toggle i18n seketika.
+- **Agent Skills Hub & Progressive Disclosure**:
+  - Struktur standar folder `skill-name/` (`SKILL.md`, `scripts/`, `references/`, `evals/`).
+  - Precedence deterministik: `project > profile > global`.
+  - Progressive disclosure 3-level: Level 1 (Metadata/Discovery dalam system prompt), Level 2 (Aktivasi instruksi penuh saat dipanggil), Level 3 (Sumber daya/eksekusi script on-demand).
+  - **Static Security Scanner**: Memeriksa injeksi prompt, eksfiltrasi rahasia/token, perintah destruktif (`rm -rf /`), dan obfuscated code sebelum skill diaktifkan.
+  - Built-in reference skills: `code-reviewer`, `test-generator`, dan `git-workflow`.
+- **Model Context Protocol (MCP) Client & Manager**:
+  - Mendukung transport `stdio` dan `http` berbasis JSON-RPC 2.0.
+  - **Deferred Tool Loading**: Tool eksternal diindeks dan dicari secara dinamis (`tool_search_mcp`) agar context window model tidak kebanjiran puluhan tool schema sekaligus.
+  - **Quarantine Isolation**: Menangani server MCP yang berperilaku aneh atau gagal schema validation.
+  - Built-in Reference MCP Server (`gateway/nusa/mcp/reference_server.py`) siap pakai out-of-the-box (`mcp_system_info`, `mcp_hash_calculator`, `mcp_echo`).
+- **Multi-Provider & Offline Fallback**: OpenAI, Anthropic, Ollama, OpenRouter, serta Deterministic Runner bawaan.
+- **Bilingual Interface & Modals**: Antarmuka responsif Bahasa Indonesia dan English dengan modal manajer Skills dan MCP interaktif.
 
 ---
 
@@ -120,8 +126,8 @@ python verify_live.py
 |---|---|---|
 | **Phase 0** | Discovery, PRD, Architecture, Threat Model, Data Model, Protocol, ADR | **SELESAI** |
 | **Phase 1** | Thin Vertical Slice (Real file read, patch, approval, test verify, diff artifact, restart recovery) | **SELESAI** |
-| **Phase 2** | Skills Hub, MCP Manager, Progressive Disclosure | *Milestone Berikutnya* |
-| **Phase 3** | Multi-Agent Workforce, Parallel Task Graph, Git Worktree Isolation | Terjadwal |
+| **Phase 2** | Skills Hub, MCP Manager, Progressive Disclosure, Static Security Scanner | **SELESAI** |
+| **Phase 3** | Multi-Agent Workforce, Parallel Task Graph, Git Worktree Isolation | *Milestone Berikutnya* |
 | **Phase 4** | Browser Sandbox (Playwright DOM-first) & Scoped Computer-Use | Terjadwal |
 | **Phase 5** | Long-Term Memory, Scoped Profiles, Cron Scheduler | Terjadwal |
 | **Phase 6** | Plugin Marketplace, Signing & Static Scanner | Terjadwal |

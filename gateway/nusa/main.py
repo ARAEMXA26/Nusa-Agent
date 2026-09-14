@@ -11,6 +11,8 @@ from nusa.api import (
     approvals_router,
     artifacts_router,
     settings_router,
+    skills_router,
+    mcp_router,
     websocket_router,
 )
 
@@ -46,6 +48,8 @@ app.include_router(tasks_router)
 app.include_router(approvals_router)
 app.include_router(artifacts_router)
 app.include_router(settings_router)
+app.include_router(skills_router)
+app.include_router(mcp_router)
 app.include_router(websocket_router)
 
 

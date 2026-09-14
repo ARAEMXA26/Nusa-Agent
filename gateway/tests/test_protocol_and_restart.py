@@ -1,5 +1,6 @@
 """Tests for API protocol, restart recovery, and mid-turn steering."""
 
+import asyncio
 import uuid
 import pytest
 from fastapi.testclient import TestClient
@@ -8,7 +9,8 @@ from nusa.db.connection import get_db, init_db
 from nusa.core.orchestrator import orchestrator
 
 
-def test_api_project_and_task_crud(temp_workspace, test_db):
+@pytest.mark.asyncio
+async def test_api_project_and_task_crud(temp_workspace, test_db):
     client = TestClient(app)
 
     # 1. Create project
@@ -42,6 +44,10 @@ def test_api_project_and_task_crud(temp_workspace, test_db):
     res_details = client.get(f"/api/tasks/{task_id}")
     assert res_details.status_code == 200
     assert res_details.json()["id"] == task_id
+
+    # Wait briefly and cancel task runner
+    await orchestrator.cancel_task(task_id)
+    await asyncio.sleep(0.05)
 
 
 def test_state_persistence_and_restart_recovery(temp_workspace, test_db):
