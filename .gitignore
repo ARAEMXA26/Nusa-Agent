@@ -1,0 +1,41 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Environment and Secrets
+.env
+.env.local
+*.key
+*.pem
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Electron
+node_modules/
+dist/
+dist-electron/
+release/
+.npm
+*.tsbuildinfo
+
+# Nusa Agent Runtime Data
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+logs/
+artifacts_store/
+test_workspaces/

@@ -1,0 +1,193 @@
+"""Tool Registry with schema definitions and dispatching."""
+
+from typing import Any, Callable, Awaitable
+from pydantic import BaseModel
+from nusa.tools.file_tools import (
+    tool_file_read,
+    tool_file_write,
+    tool_file_patch,
+    tool_file_list,
+)
+from nusa.tools.test_tools import tool_run_test
+from nusa.tools.shell_tools import tool_shell_execute
+from nusa.tools.git_tools import tool_git_status, tool_git_diff
+
+
+class ToolParameter(BaseModel):
+    name: str
+    type: str
+    description: str
+    required: bool = True
+
+
+class ToolDefinition(BaseModel):
+    name: str
+    description: str
+    parameters: list[ToolParameter]
+    parameters_schema: dict[str, Any]
+
+
+class ToolRegistry:
+    def __init__(self):
+        self._tools: dict[str, ToolDefinition] = {}
+        self._register_default_tools()
+
+    def _register_default_tools(self) -> None:
+        self._tools["file_read"] = ToolDefinition(
+            name="file_read",
+            description="Read the text content of a file inside the workspace safely.",
+            parameters=[
+                ToolParameter(name="path", type="string", description="Relative path to the file"),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Relative path to the file to read"}
+                },
+                "required": ["path"],
+            },
+        )
+
+        self._tools["file_write"] = ToolDefinition(
+            name="file_write",
+            description="Create or completely overwrite a file in the workspace.",
+            parameters=[
+                ToolParameter(name="path", type="string", description="Relative path to the file"),
+                ToolParameter(name="content", type="string", description="Full content of the file"),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Relative path to the file"},
+                    "content": {"type": "string", "description": "Full content of the file"},
+                },
+                "required": ["path", "content"],
+            },
+        )
+
+        self._tools["file_patch"] = ToolDefinition(
+            name="file_patch",
+            description="Apply a targeted find-and-replace edit to an existing file.",
+            parameters=[
+                ToolParameter(name="path", type="string", description="Relative path to the file"),
+                ToolParameter(name="search_content", type="string", description="Exact existing string to replace"),
+                ToolParameter(name="replace_content", type="string", description="New replacement string"),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Relative path to the file"},
+                    "search_content": {"type": "string", "description": "Exact existing string to replace"},
+                    "replace_content": {"type": "string", "description": "New replacement string"},
+                },
+                "required": ["path", "search_content", "replace_content"],
+            },
+        )
+
+        self._tools["file_list"] = ToolDefinition(
+            name="file_list",
+            description="List files and directories in a workspace folder.",
+            parameters=[
+                ToolParameter(name="path", type="string", description="Relative directory path (defaults to '.')", required=False),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Relative directory path (defaults to '.')"}
+                },
+            },
+        )
+
+        self._tools["run_test"] = ToolDefinition(
+            name="run_test",
+            description="Execute verification tests (pytest, npm test, etc.) in the workspace.",
+            parameters=[
+                ToolParameter(name="command", type="string", description="Test command to run, e.g. 'pytest' or 'npm test'"),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "command": {"type": "string", "description": "Command to run verification tests"}
+                },
+                "required": ["command"],
+            },
+        )
+
+        self._tools["shell_execute"] = ToolDefinition(
+            name="shell_execute",
+            description="Execute a sandboxed shell command inside the workspace directory.",
+            parameters=[
+                ToolParameter(name="command", type="string", description="Command to execute"),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "command": {"type": "string", "description": "Command to execute"}
+                },
+                "required": ["command"],
+            },
+        )
+
+        self._tools["git_status"] = ToolDefinition(
+            name="git_status",
+            description="Get the current git status of the workspace.",
+            parameters=[],
+            parameters_schema={"type": "object", "properties": {}},
+        )
+
+        self._tools["git_diff"] = ToolDefinition(
+            name="git_diff",
+            description="Get the current git diff of changes in the workspace.",
+            parameters=[],
+            parameters_schema={"type": "object", "properties": {}},
+        )
+
+    def get_tool_definitions(self) -> list[ToolDefinition]:
+        return list(self._tools.values())
+
+    def get_openai_tools(self) -> list[dict[str, Any]]:
+        """Format tools for OpenAI / Anthropic function calling."""
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": tool.parameters_schema,
+                },
+            }
+            for tool in self._tools.values()
+        ]
+
+    async def execute_tool(
+        self, workspace_root: str, tool_name: str, arguments: dict[str, Any]
+    ) -> dict[str, Any]:
+        if tool_name not in self._tools:
+            return {"success": False, "error": f"Tool '{tool_name}' not found in registry."}
+
+        if tool_name == "file_read":
+            return tool_file_read(workspace_root, arguments["path"])
+        elif tool_name == "file_write":
+            return tool_file_write(workspace_root, arguments["path"], arguments["content"])
+        elif tool_name == "file_patch":
+            return tool_file_patch(
+                workspace_root,
+                arguments["path"],
+                arguments["search_content"],
+                arguments["replace_content"],
+            )
+        elif tool_name == "file_list":
+            return tool_file_list(workspace_root, arguments.get("path", "."))
+        elif tool_name == "run_test":
+            return await tool_run_test(workspace_root, arguments["command"])
+        elif tool_name == "shell_execute":
+            return await tool_shell_execute(workspace_root, arguments["command"])
+        elif tool_name == "git_status":
+            return await tool_git_status(workspace_root)
+        elif tool_name == "git_diff":
+            return await tool_git_diff(workspace_root)
+
+        return {"success": False, "error": f"Unhandled tool '{tool_name}'"}
+
+
+tool_registry = ToolRegistry()
