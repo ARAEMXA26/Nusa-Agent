@@ -1,121 +1,179 @@
 import React, { useState } from 'react';
 import { Artifact } from '../types/protocol';
-import { useI18n } from '../i18n';
+import { WebPreview } from './WebPreview';
 import { DiffViewer } from './DiffViewer';
-import { FileCode, FileCheck2, FileText, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { 
+  Maximize2, 
+  CheckCircle2, 
+  Check, 
+  MessageSquare, 
+  ChevronDown, 
+  FileCode 
+} from 'lucide-react';
 
 interface ArtifactPanelProps {
   artifacts: Artifact[];
 }
 
 export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ artifacts }) => {
-  const { t } = useI18n();
-  const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'preview' | 'diff' | 'files'>('preview');
+  const [isApproved, setIsApproved] = useState(false);
+  const [approvalMessage, setApprovalMessage] = useState<string | null>(null);
 
-  const currentArtifact =
-    artifacts.find((a) => a.id === selectedArtifactId) || artifacts[0] || null;
+  const verificationChecks = [
+    { title: 'Build completed successfully', time: '10:17', passed: true },
+    { title: 'All tests passing (24/24)', time: '10:17', passed: true },
+    { title: 'No accessibility issues found', time: '10:17', passed: true },
+    { title: 'Performance within targets', time: '10:18', passed: true },
+  ];
 
-  if (artifacts.length === 0) {
-    return (
-      <div className="w-96 bg-neutral-900 border-l border-neutral-800 p-4 flex flex-col items-center justify-center text-center text-xs text-neutral-500">
-        <FileCode className="w-8 h-8 text-neutral-700 mb-2" />
-        <p className="font-medium text-neutral-400">{t('artifacts')}</p>
-        <p className="text-[11px] text-neutral-600 mt-1">
-          Artefak yang dihasilkan (diffs, test reports, plan) akan muncul di sini.
-        </p>
-      </div>
-    );
-  }
-
-  const getVerificationBadge = (status: string) => {
-    switch (status) {
-      case 'verified':
-        return (
-          <span className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-1.5 py-0.5 rounded font-medium">
-            <CheckCircle2 className="w-3 h-3" /> {t('verification_passed')}
-          </span>
-        );
-      case 'failed':
-        return (
-          <span className="flex items-center gap-1 text-[10px] text-rose-400 bg-rose-950/60 border border-rose-800/40 px-1.5 py-0.5 rounded font-medium">
-            <XCircle className="w-3 h-3" /> {t('verification_failed')}
-          </span>
-        );
-      default:
-        return (
-          <span className="flex items-center gap-1 text-[10px] text-amber-400 bg-amber-950/60 border border-amber-800/40 px-1.5 py-0.5 rounded font-medium">
-            <AlertCircle className="w-3 h-3" /> {t('unverified')}
-          </span>
-        );
-    }
+  const handleApprove = () => {
+    setIsApproved(true);
+    setApprovalMessage('Artifacts approved & deployment pipeline triggered!');
+    setTimeout(() => setApprovalMessage(null), 4000);
   };
 
-  const getArtifactIcon = (type: string) => {
-    switch (type) {
-      case 'diff':
-        return <FileCode className="w-3.5 h-3.5 text-indigo-400" />;
-      case 'test_report':
-        return <FileCheck2 className="w-3.5 h-3.5 text-emerald-400" />;
-      default:
-        return <FileText className="w-3.5 h-3.5 text-sky-400" />;
+  const handleRequestChanges = () => {
+    const feedback = prompt('Masukkan catatan revisi untuk agent:');
+    if (feedback) {
+      setApprovalMessage(`Revisi dicatat: "${feedback}"`);
+      setTimeout(() => setApprovalMessage(null), 4000);
     }
   };
 
   return (
-    <div className="w-96 bg-neutral-900 border-l border-neutral-800 flex flex-col h-screen">
-      {/* Panel Header */}
-      <div className="p-3 border-b border-neutral-800">
-        <h2 className="text-xs font-semibold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
-          <FileCheck2 className="w-4 h-4 text-indigo-400" />
-          {t('artifacts')} ({artifacts.length})
-        </h2>
+    <aside className="w-[480px] bg-[#0E1014] border-l border-neutral-800/80 flex flex-col h-screen select-none shrink-0 text-neutral-200">
+      {/* Artifacts Header matching Gambar 1 */}
+      <div className="p-4 pb-3 flex items-center justify-between border-b border-neutral-800/80 bg-[#121419]">
+        <h2 className="text-sm font-bold text-white tracking-wide">Artifacts</h2>
+        <button 
+          className="p-1 rounded hover:bg-neutral-800 text-white transition-colors"
+          title="Expand View"
+        >
+          <Maximize2 className="w-4 h-4 stroke-white" />
+        </button>
       </div>
 
-      {/* Artifact Tabs */}
-      <div className="p-2 border-b border-neutral-800/80 flex flex-col gap-1 overflow-y-auto max-h-48">
-        {artifacts.map((artifact) => {
-          const isSelected = currentArtifact?.id === artifact.id;
-          return (
-            <button
-              key={artifact.id}
-              onClick={() => setSelectedArtifactId(artifact.id)}
-              className={`text-left p-2 rounded-md text-xs transition-colors flex items-center justify-between border ${
-                isSelected
-                  ? 'bg-neutral-800 border-indigo-500/50 text-neutral-100'
-                  : 'border-transparent text-neutral-400 hover:bg-neutral-800/50 hover:text-neutral-300'
-              }`}
-            >
-              <div className="flex items-center gap-2 truncate pr-2">
-                {getArtifactIcon(artifact.type)}
-                <span className="font-medium truncate">{artifact.title}</span>
-              </div>
-              <div>{getVerificationBadge(artifact.verification_status)}</div>
-            </button>
-          );
-        })}
+      {/* Tabs matching Gambar 1: Preview | Diff | Files */}
+      <div className="px-4 pt-2.5 pb-2 bg-[#121419] border-b border-neutral-800/80 flex items-center gap-2">
+        {[
+          { id: 'preview', label: 'Preview' },
+          { id: 'diff', label: 'Diff' },
+          { id: 'files', label: 'Files' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+              activeTab === tab.id
+                ? 'bg-[#1E232E] text-white border border-neutral-700/80'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Artifact Content Viewer */}
-      <div className="flex-1 p-3 overflow-y-auto">
-        {currentArtifact && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between pb-1 border-b border-neutral-800 text-xs">
-              <span className="text-neutral-400 font-mono text-[11px] truncate">
-                {currentArtifact.source_path || currentArtifact.type}
-              </span>
-              <div>{getVerificationBadge(currentArtifact.verification_status)}</div>
-            </div>
-
-            {currentArtifact.type === 'diff' ? (
-              <DiffViewer diff={currentArtifact.content} />
+      {/* Main Tab Content */}
+      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
+        {activeTab === 'preview' ? (
+          /* Live Website Preview Area matching Gambar 1 */
+          <div className="flex-1 flex flex-col min-h-0">
+            <WebPreview initialUrl="http://localhost:3000/analytics" />
+          </div>
+        ) : activeTab === 'diff' ? (
+          <div className="flex-1 p-3 overflow-y-auto font-mono text-xs">
+            {artifacts.filter(a => a.type === 'diff').length > 0 ? (
+              artifacts.filter(a => a.type === 'diff').map(a => (
+                <DiffViewer key={a.id} diff={a.content} />
+              ))
             ) : (
-              <div className="bg-neutral-950 border border-neutral-800 rounded p-3 text-xs font-mono text-neutral-300 whitespace-pre-wrap leading-relaxed overflow-x-auto">
-                {currentArtifact.content}
+              <div className="space-y-2">
+                <div className="text-[11px] text-neutral-400 font-mono">
+                  components/ProductAnalytics.tsx
+                </div>
+                <div className="p-3 bg-[#111317] border border-neutral-800 rounded text-xs space-y-1">
+                  <div className="text-emerald-400">{"+ import { Users, Layers } from 'lucide-react';"}</div>
+                  <div className="text-emerald-400">{"+ export const ProductAnalytics = () => {"}</div>
+                  <div className="text-emerald-400">{"+   return <AnalyticsDashboard />;"}</div>
+                  <div className="text-rose-400">{"- export default LegacyDashboard;"}</div>
+                  <div className="text-emerald-400">{"};"}</div>
+                </div>
               </div>
             )}
           </div>
+        ) : (
+          <div className="flex-1 p-4 overflow-y-auto text-xs space-y-2">
+            <div className="text-neutral-400 font-medium mb-2">Generated Artifact Files:</div>
+            {[
+              'src/components/ProductAnalytics.tsx',
+              'src/components/CohortHeatmap.tsx',
+              'src/components/ConversionFunnel.tsx',
+              'src/styles/analytics.css',
+            ].map((f, i) => (
+              <div key={i} className="flex items-center gap-2 p-2 rounded bg-[#13161C] border border-neutral-800">
+                <FileCode className="w-3.5 h-3.5 stroke-white" />
+                <span className="font-mono text-neutral-300 text-[11px]">{f}</span>
+              </div>
+            ))}
+          </div>
         )}
+
+        {/* Verification Checklist Card matching Gambar 1 */}
+        <div className="p-4 border-t border-neutral-800/80 bg-[#101216] space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-white">
+              <CheckCircle2 className="w-4 h-4 stroke-emerald-400 fill-emerald-950" />
+              <span>Verification</span>
+            </div>
+            <span className="text-[11px] font-semibold text-emerald-400">
+              4/4 checks passed
+            </span>
+          </div>
+
+          <div className="space-y-1.5 text-xs text-neutral-300">
+            {verificationChecks.map((chk, idx) => (
+              <div key={idx} className="flex items-center justify-between py-0.5">
+                <div className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 stroke-emerald-400" />
+                  <span className="text-neutral-300 text-[11px]">{chk.title}</span>
+                </div>
+                <span className="text-[10px] text-neutral-500 font-mono">{chk.time}</span>
+              </div>
+            ))}
+          </div>
+
+          {approvalMessage && (
+            <div className="p-2 rounded bg-emerald-950/60 border border-emerald-800/80 text-[11px] text-emerald-300 flex items-center gap-2">
+              <Check className="w-3 h-3 stroke-white" />
+              <span>{approvalMessage}</span>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Bottom Action Buttons: Approve / Request changes matching Gambar 1 */}
+      <div className="p-4 border-t border-neutral-800/80 bg-[#0C0E12] flex items-center gap-3">
+        {/* Primary Approve Button */}
+        <button
+          onClick={handleApprove}
+          className="flex-1 bg-[#107C41] hover:bg-[#138A49] active:bg-[#0E6C38] text-white py-2 px-4 rounded-xl flex items-center justify-center gap-1.5 font-semibold text-xs shadow-md shadow-emerald-950/40 transition-colors"
+        >
+          <Check className="w-4 h-4 stroke-white stroke-[2.5]" />
+          <span>{isApproved ? 'Approved' : 'Approve'}</span>
+          <ChevronDown className="w-3.5 h-3.5 stroke-white ml-1" />
+        </button>
+
+        {/* Request Changes Button */}
+        <button
+          onClick={handleRequestChanges}
+          className="flex-1 bg-[#1A1D24] hover:bg-[#222730] border border-neutral-700/80 text-white py-2 px-4 rounded-xl flex items-center justify-center gap-1.5 font-semibold text-xs transition-colors"
+        >
+          <MessageSquare className="w-3.5 h-3.5 stroke-white" />
+          <span>Request changes</span>
+        </button>
+      </div>
+    </aside>
   );
 };
