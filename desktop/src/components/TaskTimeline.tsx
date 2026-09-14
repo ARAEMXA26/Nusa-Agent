@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { TaskDetail, ToolCall } from '../types/protocol';
 import { useI18n } from '../i18n';
+import nusaLogo from '../assets/logo.png';
 import { ToolInspector } from './ToolInspector';
 import { WorkforceDagViewer } from './WorkforceDagViewer';
 import { 
   Send, 
-  Bot, 
   User, 
   Wrench, 
   CornerDownRight, 
@@ -52,8 +52,8 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
   if (!activeTask) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-neutral-950">
-        <div className="w-14 h-14 rounded-2xl bg-indigo-950/60 border border-indigo-800/50 flex items-center justify-center text-indigo-400 mb-4 shadow-xl shadow-indigo-950/50">
-          <Bot className="w-7 h-7" />
+        <div className="w-16 h-16 rounded-2xl bg-neutral-900 border border-neutral-800 p-2.5 flex items-center justify-center mb-4 shadow-xl shadow-indigo-950/30">
+          <img src={nusaLogo} alt="Nusa Agent Logo" className="w-full h-full object-contain" />
         </div>
         <h2 className="text-base font-semibold text-neutral-200">{t('no_task_selected')}</h2>
         <p className="text-xs text-neutral-400 mt-1 max-w-sm">
@@ -116,10 +116,10 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
                 className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
                   isUser
                     ? 'bg-neutral-800 text-neutral-300'
-                    : 'bg-indigo-950 border border-indigo-700/50 text-indigo-400'
+                    : 'bg-neutral-900 border border-neutral-800 p-1 text-indigo-400'
                 }`}
               >
-                {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                {isUser ? <User className="w-4 h-4" /> : <img src={nusaLogo} alt="Nusa Agent" className="w-full h-full object-contain" />}
               </div>
 
               <div

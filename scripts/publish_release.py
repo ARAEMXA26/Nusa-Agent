@@ -160,24 +160,27 @@ Official desktop release of **Nusa Agent**, the local-first autonomous AI agent 
         print(f"[*] Uploading {filename} ({file_size / 1024 / 1024:.1f} MB)...")
         upload_endpoint = f"{base_upload_url}?name={urllib.parse.quote(filename)}"
         
-        with open(file_path, "rb") as f:
-            data = f.read()
-
-        upload_req = urllib.request.Request(
-            upload_endpoint,
-            data=data,
-            headers={
-                **headers,
-                "Content-Type": content_type,
-                "Content-Length": str(len(data))
-            }
-        )
+        # Use curl for reliable large file streaming upload over TLS
+        curl_cmd = [
+            "curl", "-sSL", "-X", "POST",
+            "--connect-timeout", "60",
+            "--retry", "3",
+            "-H", f"Authorization: token {token}",
+            "-H", f"Content-Type: {content_type}",
+            "-H", "Accept: application/vnd.github.v3+json",
+            "--data-binary", f"@{file_path}",
+            upload_endpoint
+        ]
         try:
-            with urllib.request.urlopen(upload_req) as up_resp:
-                res_json = json.loads(up_resp.read().decode())
-                print(f" [OK] Successfully uploaded: {res_json.get('browser_download_url')}")
+            print(f"    Starting transfer of {filename}...", flush=True)
+            res = subprocess.run(curl_cmd, capture_output=True, text=True, check=True)
+            res_json = json.loads(res.stdout)
+            if "browser_download_url" in res_json:
+                print(f" [OK] Successfully uploaded: {res_json.get('browser_download_url')}", flush=True)
+            else:
+                print(f" [!] Upload response: {res.stdout[:200]}", flush=True)
         except Exception as e:
-            print(f"[!] Error uploading {filename}: {e}")
+            print(f"[!] Error uploading {filename} via curl: {e}", flush=True)
 
     print(f"\n[SUCCESS] All assets uploaded to GitHub Release: {release_data['html_url']}")
 
