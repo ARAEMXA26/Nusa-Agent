@@ -177,8 +177,12 @@ class ToolRegistry:
     def get_tool_definitions(self) -> list[ToolDefinition]:
         return list(self._tools.values())
 
-    def get_openai_tools(self) -> list[dict[str, Any]]:
+    def get_openai_tools(self, allowed_names: list[str] | None = None) -> list[dict[str, Any]]:
         """Format tools for OpenAI / Anthropic function calling."""
+        tools = self._tools.values()
+        if allowed_names is not None:
+            tools = [t for t in tools if t.name in allowed_names]
+
         return [
             {
                 "type": "function",
@@ -188,7 +192,7 @@ class ToolRegistry:
                     "parameters": tool.parameters_schema,
                 },
             }
-            for tool in self._tools.values()
+            for tool in tools
         ]
 
     async def execute_tool(

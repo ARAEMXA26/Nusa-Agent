@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TaskDetail, ToolCall } from '../types/protocol';
 import { useI18n } from '../i18n';
 import { ToolInspector } from './ToolInspector';
+import { WorkforceDagViewer } from './WorkforceDagViewer';
 import { 
   Send, 
   Bot, 
@@ -96,6 +97,9 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
             <p className="text-neutral-300 mt-1 leading-relaxed">{activeTask.goal}</p>
           </div>
         </div>
+
+        {/* Phase 3 Workforce DAG & Subtasks Viewer */}
+        <WorkforceDagViewer taskId={activeTask.id} />
 
         {/* Message Items */}
         {activeTask.messages.map((msg) => {

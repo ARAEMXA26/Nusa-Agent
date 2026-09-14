@@ -142,6 +142,33 @@ async def run_live_verification():
 
             print("[SUCCESS] All Phase 2 (Skills & MCP) assertions verified on live server!")
 
+            # 9. Phase 3 Verification: Multi-Agent Workforce & DAG
+            print("\n=== VERIFYING PHASE 3 (MULTI-AGENT WORKFORCE & DAG) ===")
+            plan_dag_req = urllib.request.Request(
+                f"{BASE_URL}/api/tasks/{task_id}/dag/plan",
+                data=json.dumps({"use_worktree": False}).encode(),
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(plan_dag_req) as resp:
+                plan_res = json.loads(resp.read().decode())
+            print(f"[OK] Planned Workforce DAG: {len(plan_res['dag']['nodes'])} pipeline nodes created.")
+
+            # Query DAG status
+            get_dag_req = urllib.request.Request(f"{BASE_URL}/api/tasks/{task_id}/dag")
+            with urllib.request.urlopen(get_dag_req) as resp:
+                dag_status = json.loads(resp.read().decode())
+            print(f"[OK] Retrieved DAG with {len(dag_status['nodes'])} subtasks:")
+            for n in dag_status["nodes"]:
+                print(f"     - [{n['role'].upper()}] {n['title']} (status={n['status']}, deps={n['dependencies']})")
+
+            assert len(dag_status["nodes"]) == 4
+            roles = [n["role"] for n in dag_status["nodes"]]
+            assert "planner" in roles
+            assert "coder" in roles
+            assert "reviewer" in roles
+            assert "verifier" in roles
+            print("[SUCCESS] All Phase 3 (Workforce DAG & Subtasks) assertions verified on live server!")
+
 
 if __name__ == "__main__":
     asyncio.run(run_live_verification())

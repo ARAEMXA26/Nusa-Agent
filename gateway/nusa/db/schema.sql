@@ -108,3 +108,19 @@ CREATE TABLE IF NOT EXISTS settings (
     value_json TEXT NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS subtasks (
+    id TEXT PRIMARY KEY,
+    parent_task_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    title TEXT NOT NULL,
+    goal TEXT NOT NULL,
+    dependencies_json TEXT NOT NULL DEFAULT '[]',
+    status TEXT NOT NULL, -- pending, running, completed, failed, blocked, cancelled
+    depth INTEGER DEFAULT 1,
+    result_summary TEXT,
+    error TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+    FOREIGN KEY(parent_task_id) REFERENCES tasks(id) ON DELETE CASCADE
+);

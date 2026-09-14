@@ -13,6 +13,7 @@ from nusa.api import (
     settings_router,
     skills_router,
     mcp_router,
+    workforce_router,
     websocket_router,
 )
 
@@ -50,6 +51,7 @@ app.include_router(artifacts_router)
 app.include_router(settings_router)
 app.include_router(skills_router)
 app.include_router(mcp_router)
+app.include_router(workforce_router)
 app.include_router(websocket_router)
 
 

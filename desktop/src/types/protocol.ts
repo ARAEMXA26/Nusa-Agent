@@ -77,3 +77,35 @@ export interface GatewayEvent {
   timestamp: string;
   payload: Record<string, any>;
 }
+
+export type AgentRole = 'planner' | 'coder' | 'reviewer' | 'verifier';
+
+export type SubtaskStatus =
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'blocked'
+  | 'cancelled';
+
+export interface SubtaskNode {
+  id: string;
+  parent_task_id: string;
+  role: AgentRole;
+  title: string;
+  goal: string;
+  dependencies: string[];
+  status: SubtaskStatus;
+  depth: number;
+  result_summary?: string | null;
+  error?: string | null;
+  created_at: string;
+  completed_at?: string | null;
+}
+
+export interface TaskDAGData {
+  parent_task_id: string;
+  nodes: SubtaskNode[];
+  is_completed: boolean;
+  is_terminated: boolean;
+}
