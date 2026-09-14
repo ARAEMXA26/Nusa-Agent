@@ -13,6 +13,21 @@
     "dist-electron/**/*",
     "package.json"
   ],
+  "extraResources": [
+    {
+      "from": "../gateway",
+      "to": "gateway",
+      "filter": [
+        "nusa/**/*",
+        "skills/**/*",
+        "pyproject.toml",
+        "README.md",
+        "!**/__pycache__/**",
+        "!**/.pytest_cache/**",
+        "!**/.venv/**"
+      ]
+    }
+  ],
   "mac": {
     "icon": "build/icon.icns",
     "identity": null,

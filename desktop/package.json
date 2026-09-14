@@ -5,7 +5,6 @@
   "author": "Nusa Agent Contributors <contact@nusa-agent.dev>",
   "license": "Apache-2.0",
   "private": true,
-  "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
