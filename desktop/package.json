@@ -1,7 +1,8 @@
 {
   "name": "nusa-desktop",
   "version": "0.1.0",
-  "description": "Local-First Autonomous AI Agent Command Center across desktop platforms",
+  "description": "Nusa Agent Autonomous AI Command Center",
+  "homepage": "https://github.com/ARAEMXA26/Nusa-Agent",
   "author": "Nusa Agent Contributors <contact@nusa-agent.dev>",
   "license": "Apache-2.0",
   "private": true,
@@ -17,7 +18,8 @@
     "package:mac": "electron-builder --mac --config electron-builder.json",
     "package:win": "electron-builder --win --config electron-builder.json",
     "package:linux": "electron-builder --linux --config electron-builder.json",
-    "package:all": "electron-builder -mwl --config electron-builder.json"
+    "package:all": "electron-builder -mwl --config electron-builder.json",
+    "release:all": "bash ../scripts/build_all_and_publish.sh"
   },
   "dependencies": {
     "clsx": "^2.1.1",

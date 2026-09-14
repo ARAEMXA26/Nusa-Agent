@@ -75,15 +75,18 @@
         "target": "portable",
         "arch": ["x64"]
       }
-    ],
-    "artifactName": "Nusa-Agent-${version}-win-${arch}.${ext}"
+    ]
   },
   "nsis": {
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "Nusa Agent"
+    "shortcutName": "Nusa Agent",
+    "artifactName": "Nusa-Agent-${version}-win-${arch}.exe"
+  },
+  "portable": {
+    "artifactName": "Nusa-Agent-${version}-win-${arch}-portable.exe"
   },
   "linux": {
     "icon": "build/icons",
@@ -103,6 +106,12 @@
     ],
     "category": "Development",
     "artifactName": "Nusa-Agent-${version}-linux-${arch}.${ext}"
+  },
+  "appImage": {
+    "artifactName": "Nusa-Agent-${version}-linux-${arch}.AppImage"
+  },
+  "deb": {
+    "artifactName": "Nusa-Agent-${version}-linux-${arch}.deb"
   },
   "publish": {
     "provider": "github",

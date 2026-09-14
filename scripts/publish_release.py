@@ -57,15 +57,28 @@ def main():
 
     # 1. Compute checksums
     print(f"[*] Scanning release artifacts in {DIST_DIR}...")
-    files_to_upload = list(DIST_DIR.glob("*.dmg")) + list(DIST_DIR.glob("*.zip"))
+    patterns = ["*.dmg", "*.zip", "*.exe", "*.AppImage", "*.deb", "*.tar.gz", "*.yml", "*.blockmap"]
+    files_to_upload = []
+    seen = set()
+    for pat in patterns:
+        for f in sorted(DIST_DIR.glob(pat)):
+            # Normalize redundant arch names
+            if "x86_64" in f.name and (DIST_DIR / f.name.replace("x86_64", "x64")).exists():
+                continue
+            if "amd64" in f.name and (DIST_DIR / f.name.replace("amd64", "x64")).exists():
+                continue
+            if f.name not in seen and f.is_file():
+                seen.add(f.name)
+                files_to_upload.append(f)
     
     checksums_path = DIST_DIR / "checksums.txt"
     checksum_lines = []
     for f in sorted(files_to_upload):
-        h = calculate_sha256(f)
-        line = f"{h}  {f.name}"
-        checksum_lines.append(line)
-        print(f"    - {f.name} ({f.stat().st_size / 1024 / 1024:.1f} MB) -> {h[:16]}...")
+        if f.suffix in [".dmg", ".zip", ".exe", ".AppImage", ".deb", ".gz"]:
+            h = calculate_sha256(f)
+            line = f"{h}  {f.name}"
+            checksum_lines.append(line)
+            print(f"    - {f.name} ({f.stat().st_size / 1024 / 1024:.1f} MB) -> {h[:16]}...")
     
     with open(checksums_path, "w") as cf:
         cf.write("\n".join(checksum_lines) + "\n")
@@ -131,14 +144,22 @@ Official desktop release of **Nusa Agent**, the local-first autonomous AI agent 
     upload_url_template = release_data["upload_url"] # e.g. "https://uploads.github.com/repos/.../releases/123/assets{?name,label}"
     base_upload_url = upload_url_template.split("{")[0]
 
-    existing_assets = {a["name"]: a["id"] for a in release_data.get("assets", [])}
+    existing_assets = {a["name"]: (a["id"], a["size"]) for a in release_data.get("assets", [])}
 
     for file_path in files_to_upload:
         filename = file_path.name
+        file_size = file_path.stat().st_size
+        
+        # If asset exists and has exact same size, skip re-uploading to save time
+        if filename in existing_assets and existing_assets[filename][1] == file_size and filename != "checksums.txt":
+            print(f"[OK] Asset {filename} already exists with identical size ({file_size / 1024 / 1024:.1f} MB), skipping.")
+            continue
+
         if filename in existing_assets:
-            print(f"[*] Asset {filename} already exists (ID: {existing_assets[filename]}), deleting old version...")
+            asset_id = existing_assets[filename][0]
+            print(f"[*] Asset {filename} already exists (ID: {asset_id}), deleting old version...")
             del_req = urllib.request.Request(
-                f"https://api.github.com/repos/{REPO}/releases/assets/{existing_assets[filename]}",
+                f"https://api.github.com/repos/{REPO}/releases/assets/{asset_id}",
                 headers=headers,
                 method="DELETE"
             )
@@ -155,15 +176,23 @@ Official desktop release of **Nusa Agent**, the local-first autonomous AI agent 
             content_type = "application/x-apple-diskimage"
         elif filename.endswith(".zip"):
             content_type = "application/zip"
+        elif filename.endswith(".exe"):
+            content_type = "application/x-msdownload"
+        elif filename.endswith(".deb"):
+            content_type = "application/vnd.debian.binary-package"
+        elif filename.endswith(".AppImage"):
+            content_type = "application/x-executable"
 
-        file_size = file_path.stat().st_size
-        print(f"[*] Uploading {filename} ({file_size / 1024 / 1024:.1f} MB)...")
+        print(f"[*] Uploading {filename} ({file_size / 1024 / 1024:.1f} MB)...", flush=True)
         upload_endpoint = f"{base_upload_url}?name={urllib.parse.quote(filename)}"
         
         # Use curl for reliable large file streaming upload over TLS
         curl_cmd = [
             "curl", "-sSL", "-X", "POST",
             "--connect-timeout", "60",
+            "--max-time", "600",
+            "--speed-limit", "10240",
+            "--speed-time", "30",
             "--retry", "3",
             "-H", f"Authorization: token {token}",
             "-H", f"Content-Type: {content_type}",
