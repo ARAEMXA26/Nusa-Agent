@@ -1,5 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
+import { startGatewayProcess, stopGatewayProcess } from './gateway-process';
+import { registerUpdaterIpc } from './updater';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -29,6 +31,8 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  registerUpdaterIpc(mainWindow);
 }
 
 // Dialog handler for folder selection
@@ -42,7 +46,14 @@ ipcMain.on('openDirectoryDialog', async (event: any) => {
   }
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  await startGatewayProcess();
+  createWindow();
+});
+
+app.on('will-quit', () => {
+  stopGatewayProcess();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

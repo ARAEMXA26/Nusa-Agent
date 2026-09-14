@@ -1,0 +1,113 @@
+name: Release Nusa Agent Multi-Platform
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+            target: mac
+          - os: windows-latest
+            arch: x64
+            target: win
+          - os: ubuntu-latest
+            arch: x64
+            target: linux
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Gateway Dependencies & Run Pytest
+        run: |
+          cd gateway
+          python -m pip install --upgrade pip
+          pip install -e .
+          pytest tests/ -q
+
+      - name: Install Desktop Dependencies
+        run: |
+          cd desktop
+          npm ci
+
+      - name: Build Desktop Frontend & Electron
+        run: |
+          cd desktop
+          npm run build
+
+      - name: Package Desktop Artifacts (${{ matrix.target }})
+        run: |
+          cd desktop
+          npx electron-builder --${{ matrix.target }} --config electron-builder.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nusa-agent-${{ matrix.target }}-${{ matrix.arch }}
+          path: |
+            desktop/dist-release/*.dmg
+            desktop/dist-release/*.zip
+            desktop/dist-release/*.exe
+            desktop/dist-release/*.AppImage
+            desktop/dist-release/*.deb
+            desktop/dist-release/*.tar.gz
+          if-no-files-found: warn
+
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all built artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Generate Checksums Manifest
+        run: |
+          cd release-artifacts
+          find . -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" \) -exec sha256sum {} + > checksums.txt
+          cat checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-artifacts/**/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

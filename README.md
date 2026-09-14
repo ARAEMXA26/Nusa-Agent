@@ -1,164 +1,174 @@
 # Nusa Agent 🛡️🤖
 
-> **Local-first Agent Command Center** yang extensible, aman, dan berdaya tinggi (overpowered).
+[![Release](https://img.shields.io/badge/release-v0.1.0-indigo.svg)](https://github.com/ARAEMXA26/Nusa-Agent/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-emerald.svg)](https://github.com/ARAEMXA26/Nusa-Agent/releases)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](gateway/)
+[![Node](https://img.shields.io/badge/node-22+-green.svg)](desktop/)
+
+> **Local-first Autonomous AI Agent Command Center** lintas platform yang aman, extensible, dan berdaya tinggi (*overpowered*).  
 > Mengadopsi prinsip arsitektur teruji dari Hermes Agent, OpenClaw, Agent Zero, Eigent, Goose, OpenHands, dan Google Antigravity.
 
 ---
 
-## Ringkasan Proyek
+## 📥 Unduh Nusa Agent (Semua Perangkat Tersedia)
 
-Nusa Agent adalah aplikasi desktop AI agent multi-platform (macOS, Windows, Linux) yang mengontrol pekerjaan otonom melalui pemisahan tegas antara **Desktop Shell** dan **Agent Gateway/Daemon**.
+Nusa Agent dapat langsung diunduh dan dipasang pada sistem operasi **macOS**, **Windows**, dan **Linux**. Seluruh berkas rilis dan checksum verifikasi tersedia secara resmi di **[GitHub Releases](https://github.com/ARAEMXA26/Nusa-Agent/releases/latest)**.
 
-### Fitur Utama (Phase 0, Phase 1, Phase 2 & Phase 3 Selesai):
-- **Local-First & Privacy Preserving**: Database SQLite dengan mode Write-Ahead Logging (`WAL`), data project, task, artifact, dan audit logs tersimpan sepenuhnya di perangkat lokal.
-- **Strict Security & Canonical Path Jail**: Setiap pembacaan, penulisan, dan patch file dibatasi di dalam root directory workspace proyek menggunakan resolving path kanonikal dan pencegahan symlink escape.
-- **Policy Engine (`DENY > ASK > ALLOW`)**:
-  - `DENY`: Akses direktori di luar workspace proyek, traversal, atau perintah destruktif sistem.
-  - `ASK`: Modifikasi file (`file_patch`, `file_write`, `file_delete`), eksekusi shell, and network calls memerlukan otorisasi eksplisit pengguna.
-  - `ALLOW`: Operasi read-only dalam workspace (`file_read`, `file_list`, `git_status`).
-- **Human-in-the-loop Approvals**: Tampilan persetujuan real-time di UI dengan preview diff sebelum kode ditulis ke disk.
-- **Multi-Agent Workforce & Parallel Task Graph (DAG)**:
-  - Sub-agents terspesialisasi berdasarkan peran: **Planner** (arsitektur & breakdown rencana), **Coder** (implementasi kode), **Reviewer** (audit keamanan & quality review), dan **Verifier** (eksekusi pengujian nyata).
-  - DAG engine dengan deteksi siklus dependencies, isolasi kegagalan kaskade (*cascading blocked state*), dan eksekusi paralel node independen via `asyncio.gather`.
-  - **Sub-agent Containment**: Batasan kedalaman rekursi (`depth <= 3`), pewarisan izin ketat (`child <= parent`), dan isolasi riwayat percakapan (hanya summary yang dikirimkan ke parent task).
-- **Git Worktree Isolation**:
-  - Modifikasi kode sub-agent dieksekusi di branch worktree terpisah (`.nusa/worktrees/wt-...`) tanpa mengotori working tree utama pengguna.
-  - Perubahan di-merge secara otomatis hanya jika tahapan Verifier menyatakan seluruh test lulus 100%.
-- **Deterministic Verification Phase**: Agent tidak sekadar mengklaim pekerjaan selesai; agent menjalankan test suite nyata (`run_test`) dan memverifikasi keluaran sebelum menandai task sebagai `completed`.
-- **Artifact & Diff Review**: Visualisasi unified diff dengan pewarnaan penambahan/pengurangan kode dan tab laporan hasil test.
-- **Mid-turn Steering & Cancellation**: Pengguna dapat memberikan instruksi korektif di tengah eksekusi agent atau membatalkan pekerjaan kapan saja.
-- **Agent Skills Hub & Progressive Disclosure**:
-  - Struktur standar folder `skill-name/` (`SKILL.md`, `scripts/`, `references/`, `evals/`).
-  - Precedence deterministik: `project > profile > global`.
-  - Progressive disclosure 3-level: Level 1 (Metadata/Discovery dalam system prompt), Level 2 (Aktivasi instruksi penuh saat dipanggil), Level 3 (Sumber daya/eksekusi script on-demand).
-  - **Static Security Scanner**: Memeriksa injeksi prompt, eksfiltrasi rahasia/token, perintah destruktif (`rm -rf /`), dan obfuscated code sebelum skill diaktifkan.
-  - Built-in reference skills: `code-reviewer`, `test-generator`, dan `git-workflow`.
-- **Model Context Protocol (MCP) Client & Manager**:
-  - Mendukung transport `stdio` dan `http` berbasis JSON-RPC 2.0.
-  - **Deferred Tool Loading**: Tool eksternal diindeks dan dicari secara dinamis (`tool_search_mcp`) agar context window model tidak kebanjiran puluhan tool schema sekaligus.
-  - **Quarantine Isolation**: Menangani server MCP yang berperilaku aneh atau gagal schema validation.
-  - Built-in Reference MCP Server (`gateway/nusa/mcp/reference_server.py`) siap pakai out-of-the-box (`mcp_system_info`, `mcp_hash_calculator`, `mcp_echo`).
-- **Multi-Provider & Offline Fallback**: OpenAI, Anthropic, Ollama, OpenRouter, serta Deterministic Runner bawaan.
-- **Bilingual Interface & Interactive Multi-Agent UI**: Antarmuka responsif Bahasa Indonesia dan English dengan modal manajer Skills, MCP, Browser Sandbox DOM-First, dan visualisasi interaktif pipeline DAG Multi-Agent di Desktop Shell.
-- **Browser Automation Sandbox & Scoped Computer-Use (Phase 4)**:
-  - **DOM-First Web Automation**: Otomasi Playwright headless Chromium yang fokus pada DOM accessibility tree dan representasi teks bersih alih-alih screenshot visual besar, menghemat token context window LLM.
-  - **SSRF & Network Security Engine**: Memblokir skema berbahaya (`file://`, `data:`, `javascript:`), local loopback (`127.0.0.1`, `localhost`), link-local metadata cloud (`169.254.169.254`), serta subnet privat. Mendukung domain allowlist/blocklist kustom.
-  - **Interactive Element Tagging**: Memberikan ID deterministik (`[button]`, `[input]`, `[link]`) untuk penargetan interaksi klik dan ketik yang akurat.
-  - **Scoped Computer-Use Gating**: Emulasi keystroke dan mouse click koordinat layar terikat boundary `[0..3840, 0..2160]` dengan penegakan izin Tier 2 `ASK` (wajib approval manusia).
-  - **Desktop Browser Inspector Modal**: Antarmuka penjelajah URL langsung, tree inspector interaktif, dan penampil snapshot visual.
-- **Long-Term Memory, Scoped Profiles & Cron Scheduler (Phase 5)**:
-  - **Long-Term Memory Subsystem**: Hirarki penyimpanan ganda Markdown (`USER.md`, `MEMORY.md`) dan basis data SQLite berindeks cepat untuk retrieval keyword/FTS dan injeksi konteks progresif tanpa pemborosan token.
-  - **Memory Self-Reflection Tools**: Agentic tools `memory_search`, `memory_store`, `memory_forget`, dan `memory_list` untuk menyimpan preferensi pengguna, aturan arsitektur, dan konteks proyek.
-  - **Scoped Profiles & Cross-Profile Soft Guard**: Profil terisolasi (`default`, `researcher`, `security-auditor`, dll.) dengan folder skill dan memori terpisah. Soft guard mencegah mutasi silang antar-profil tanpa persetujuan eksplisit.
-  - **Background Cron Task Scheduler**: Penjadwalan tugas agentik otonom berbasis sintaks cron standar (`@hourly`, `@daily`, `*/30 * * * *`, `interval:60`) dengan riwayat eksekusi lengkap (`cron_runs`).
-  - **Memory & Scheduler Desktop UI**: Modal tabulasi terpadu di Desktop Shell untuk mengelola memori proyek/global, berpindah profil aktif, dan mengatur jadwal eksekusi tugas background.
-- **Plugin Marketplace, Signing & Static Scanner (Phase 6)**:
-  - **Standard Plugin Architecture**: Struktur standar ekstensi `plugin.json`, penentuan permission/scopes (`shell`, `network`, `fs_read`, `fs_write`, `browser`), dan dynamic tool/skill loading ke runtime Nusa.
-  - **Cryptographic Signing & Integrity**: Tanda tangan digital asimetris Ed25519 dan hash deterministik direktori SHA-256 untuk memvalidasi integritas paket serta mencegah *tampering* atau manipulasi kode pihak ketiga.
-  - **Deep AST Static Security Scanner**: Parser Abstract Syntax Tree (AST) Python yang memindai kode sebelum instalasi. Otomatis memblokir eksekusi berbahaya (`eval`, `exec`), shell mentah (`os.system`, `subprocess(shell=True)`), soket jaringan tanpa izin, dan kebocoran kredensial rahasia (`~/.ssh`, `.aws`, `.env`).
-  - **Curated Marketplace Catalog**: Katalog plugin bawaan (`Docker Ops`, `Git Assistant`, `SQLite WAL Analyzer`, `DOM Markdown Scraper`) lengkap dengan rating bintang dan audit hak akses.
-  - **Desktop Plugin Marketplace & Auditor Modal**: Antarmuka visual desktop untuk eksplorasi katalog, instalasi terverifikasi, toggle aktivasi, dan audit keamanan direktori plugin secara on-demand.
+### Tabel Tautan Unduhan Langsung (Direct Download Links)
+
+| Sistem Operasi | Arsitektur | Format Berkas | Tautan Unduhan Langsung | Deskripsi |
+|---|---|---|---|---|
+| **macOS** (Apple Silicon) | Apple Silicon (`arm64` / M1, M2, M3, M4) | **`.dmg`** | [⬇️ Unduh `.dmg` (Apple Silicon)](https://github.com/ARAEMXA26/Nusa-Agent/releases/download/v0.1.0/Nusa-Agent-0.1.0-mac-arm64.dmg) | Installer drag-and-drop resmi macOS |
+| **macOS** (Apple Silicon) | Apple Silicon (`arm64`) | **`.zip`** | [⬇️ Unduh `.zip` (Portable)](https://github.com/ARAEMXA26/Nusa-Agent/releases/download/v0.1.0/Nusa-Agent-0.1.0-mac-arm64.zip) | Portable standalone bundle |
+| **macOS** (Intel) | Intel 64-bit (`x64`) | **`.dmg`** | [⬇️ Unduh `.dmg` (Intel)](https://github.com/ARAEMXA26/Nusa-Agent/releases/download/v0.1.0/Nusa-Agent-0.1.0-mac-x64.dmg) | Installer macOS untuk Mac berbasis prosesor Intel |
+| **macOS** (Intel) | Intel 64-bit (`x64`) | **`.zip`** | [⬇️ Unduh `.zip` (Intel)](https://github.com/ARAEMXA26/Nusa-Agent/releases/download/v0.1.0/Nusa-Agent-0.1.0-mac-x64.zip) | Portable standalone bundle untuk Mac Intel |
+| **Windows** | 64-bit (`x64`) | **`.exe` (Installer)** | [⬇️ Unduh Setup `.exe`](https://github.com/ARAEMXA26/Nusa-Agent/releases/download/v0.1.0/Nusa-Agent-0.1.0-win-x64.exe) | Setup wizard installer untuk Windows 10 & 11 |
+| **Windows** | 64-bit (`x64`) | **`.exe` (Portable)** | [⬇️ Unduh Portable `.exe`](https://github.com/ARAEMXA26/Nusa-Agent/releases/download/v0.1.0/Nusa-Agent-0.1.0-win-x64-portable.exe) | Single executable siap pakai tanpa instalasi |
+| **Linux** (Universal) | 64-bit (`x64`) | **`.AppImage`** | [⬇️ Unduh `.AppImage`](https://github.com/ARAEMXA26/Nusa-Agent/releases/download/v0.1.0/Nusa-Agent-0.1.0-linux-x64.AppImage) | Universal Linux binary (Ubuntu, Fedora, Arch, dll.) |
+| **Linux** (Debian/Ubuntu) | 64-bit (`x64`) | **`.deb`** | [⬇️ Unduh `.deb` Package](https://github.com/ARAEMXA26/Nusa-Agent/releases/download/v0.1.0/Nusa-Agent-0.1.0-linux-x64.deb) | Paket instalasi Debian, Ubuntu, Linux Mint |
+| **Linux** (Tarball) | 64-bit (`x64`) | **`.tar.gz`** | [⬇️ Unduh `.tar.gz`](https://github.com/ARAEMXA26/Nusa-Agent/releases/download/v0.1.0/Nusa-Agent-0.1.0-linux-x64.tar.gz) | Arsip biner mandiri untuk distribusi Linux lainnya |
+
+> 🔒 **Verifikasi Integritas**: Seluruh checksum SHA-256 rilis dapat dicocokkan melalui berkas [`checksums.txt`](https://github.com/ARAEMXA26/Nusa-Agent/releases/download/v0.1.0/checksums.txt).
 
 ---
 
-## Struktur Repositori
+## 🚀 Panduan Instalasi Cepat Per Perangkat
 
-```text
-.
-├── docs/                      # Dokumentasi Desain Sistem & Keputusan
-│   ├── PRD.md                 # Product Requirements Document
-│   ├── ARCHITECTURE.md        # Arsitektur sistem berlapis
-│   ├── THREAT_MODEL.md        # Model ancaman & matriks keamanan
-│   ├── DATA_MODEL.md          # Skema DDL SQLite WAL
-│   ├── PROTOCOL.md            # Spesifikasi WebSocket & REST event stream
-│   ├── ROADMAP.md             # Roadmap prioritas Phase 0-7 & Risk Register
-│   ├── DECISION_LOG.md        # Log keputusan arsitektur
-│   └── ADR/                   # Architecture Decision Records
-│       ├── ADR-0001-stack-selection.md
-│       └── ADR-0002-permission-and-sandbox.md
-├── gateway/                   # Local Agent Gateway (FastAPI + AsyncIO + SQLite)
-│   ├── nusa/
-│   │   ├── config.py          # Konfigurasi data dir, DB, host & port
-│   │   ├── db/                # Koneksi SQLite WAL, schema, migrasi
-│   │   ├── security/          # Path jail, policy engine, audit log, redactor
-│   │   ├── tools/             # File tools, shell tools, test runners, git tools
-│   │   ├── artifacts/         # Artifact & diff manager
-│   │   ├── providers/         # Provider adapters (OpenAI, Anthropic, Ollama, etc.)
-│   │   ├── core/              # State machine, event bus, task orchestrator
-│   │   └── api/               # REST routers & WebSocket handler
-│   ├── tests/                 # Test suite (Unit, Security, Tools, E2E Vertical Slice)
-│   └── verify_live.py         # Skrip verifikasi live E2E
-├── desktop/                   # Desktop Shell (React + TypeScript + Tailwind + Electron)
-│   ├── electron/              # Electron main process & context-isolated preload
-│   └── src/
-│       ├── components/        # Sidebar, AgentManager, ApprovalsInbox, TaskTimeline, ArtifactPanel, DiffViewer
-│       ├── hooks/             # useGateway (WebSocket connection & REST actions)
-│       ├── i18n/              # Kamus Bahasa Indonesia (id.json) & English (en.json)
-│       └── types/             # Protokol TypeScript & domain types
-├── run_gateway.sh             # Skrip runner cepat Agent Gateway
-├── run_desktop.sh             # Skrip runner cepat Desktop Shell
-├── LICENSE                    # Lisensi Apache-2.0
-└── README.md                  # Dokumentasi utama proyek
+### 🍎 macOS
+1. Unduh file `.dmg` sesuai prosesor Mac Anda (Apple Silicon `arm64` untuk chip seri M, atau Intel `x64`).
+2. Buka berkas `.dmg` dan seret ikon **Nusa Agent** ke folder **Applications**.
+3. Jika muncul peringatan keamanan macOS Gatekeeper saat pertama kali dibuka, berikan izin di *System Settings > Privacy & Security* atau jalankan perintah di terminal:
+   ```bash
+   xattr -cr "/Applications/Nusa Agent.app"
+   ```
+
+### 🪟 Windows (10 & 11)
+1. Unduh installer `Nusa-Agent-0.1.0-win-x64.exe` atau versi `portable.exe`.
+2. Jalankan berkas `.exe` dan ikuti petunjuk wizard untuk membuat shortcut di Desktop dan Start Menu.
+3. Aplikasi siap dijalankan langsung.
+
+### 🐧 Linux
+**Menggunakan AppImage (Universal)**:
+```bash
+chmod +x Nusa-Agent-0.1.0-linux-x64.AppImage
+./Nusa-Agent-0.1.0-linux-x64.AppImage
+```
+
+**Menggunakan Debian Package (.deb)**:
+```bash
+sudo dpkg -i Nusa-Agent-0.1.0-linux-x64.deb
+sudo apt-get install -f # jika membutuhkan pemenuhan dependensi
 ```
 
 ---
 
-## Cara Menjalankan
+## 🌟 Apa itu Nusa Agent?
 
-### Prasyarat
-- Python 3.11+
-- Node.js 18+ & npm
-- `uv` (atau pip standar)
+**Nusa Agent** adalah command center agen AI otonom *local-first* yang dirancang untuk mengendalikan tugas-tugas rekayasa perangkat lunak secara otomatis tanpa mengorbankan privasi kode dan kendali keamanan sistem.
 
-### 1. Menjalankan Agent Gateway
+Sistem memisahkan tanggung jawab secara tegas antara:
+- **Desktop Shell (Electron + React + Tailwind)**: Antarmuka visual yang responsif, menyajikan timeline eksekusi langsung, persetujuan diff interaktif (*Human-in-the-loop*), visualisasi DAG sub-agen, inspeksi sandbox browser DOM-first, manajemen memori jangka panjang, dan plugin marketplace.
+- **Agent Gateway & Daemon (FastAPI + AsyncIO + SQLite WAL)**: Server agen lokal berperforma tinggi yang mengeksekusi siklus penalaran, dispatching tool dengan izin ketat (*Canonical Path Jail*), dan koordinasi multi-agent workforce.
+
+---
+
+## 🛡️ Fitur Unggulan Arsitektur
+
+### 1. Keamanan Berlapis & Zero-Trust Sandboxing
+- **Canonical Path Jail (`PathJail.resolve_safe()`)**: Mencegah serangan path traversal (`../`) dan symlink escape keluar dari direktori workspace proyek.
+- **Tiga Tingkat Kebijakan Akses (`DENY > ASK > ALLOW`)**:
+  - `DENY`: Memblokir mutlak akses berkas di luar workspace dan perintah sistem berbahaya.
+  - `ASK`: Operasi tulis berkas (`file_write`, `file_patch`), mutasi jaringan, dan eksekusi shell wajib meminta persetujuan manusia secara eksplisit di antarmuka desktop.
+  - `ALLOW`: Operasi baca aman di dalam batas workspace.
+
+### 2. Multi-Agent Workforce & Parallel DAG Execution
+- **Spesialisasi Agen**: Terbagi menjadi peran **Planner** (dekomposisi tugas), **Coder** (implementasi kode), **Reviewer** (audit keamanan kode), dan **Verifier** (eksekusi testing nyata).
+- **Git Worktree Isolation**: Setiap sub-agen coder bekerja pada isolated git worktree (`.nusa/worktrees/wt-...`). Perubahan hanya di-merge ke branch utama jika tahap Verifier membuktikan seluruh test lulus 100%.
+
+### 3. Progressive Skills Hub & MCP Client
+- **Progressive Context Disclosure**: Penyingkatan token instruksi agen hingga 85% dengan memuat metadata ringan pada system prompt dan hanya membuka instruksi mendalam saat skill dipanggil secara aktif.
+- **Model Context Protocol (MCP)**: Dukungan transport JSON-RPC `stdio` dan `http` dengan pemuatan tool dinamis secara *deferred*.
+- **Static Security Scanner**: Memeriksa file skill terhadap injeksi prompt dan eksfiltrasi rahasia sebelum dieksekusi.
+
+### 4. Headless Browser Sandbox & Scoped Computer-Use
+- **DOM-First Accessibility Automation**: Otomasi Playwright Chromium yang mengutamakan tree accessibility DOM berbasis teks bersih untuk efisiensi token tanpa keharusan mengirim screenshot visual besar ke LLM.
+- **SSRF & Network Shield**: Memblokir skema berbahaya (`file://`, `data:`), loopback internal (`127.0.0.1`), metadata cloud AWS/GCP, dan subnet privat.
+
+### 5. Long-Term Memory, Scoped Profiles & Cron Scheduler
+- **Dual Persistence Memory**: Menyimpan preferensi di berkas Markdown human-readable (`USER.md`, `MEMORY.md`) sekaligus terindeks dalam SQLite WAL untuk pencarian FTS cepat.
+- **Scoped Profiles & Cross-Profile Soft Guard**: Profil terisolasi (`default`, `researcher`, `security-auditor`) dengan pencegahan akses berkas antar-profil.
+- **Asynchronous Cron Scheduler**: Penjadwalan tugas agentik background berbasis sintaks cron 5-kolom standar (`@hourly`, `@daily`, `interval:60`) dengan riwayat audit lengkap.
+
+### 6. Plugin Marketplace, Cryptographic Signing & AST Scanner
+- **Ed25519 Signatures & SHA-256 Checksums**: Verifikasi integritas kriptografis pada setiap plugin untuk mencegah *tampering* dan injeksi kode pihak ketiga.
+- **Deep AST Static Security Scanner**: Parser Abstract Syntax Tree (AST) Python yang memindai kode sebelum instalasi dan memblokir otomatis panggilan berbahaya (`eval`, `exec`, `os.system`, `subprocess(shell=True)`, dan pencurian kredensial `.ssh` / `.aws`).
+
+### 7. Multi-Platform Packaging & Auto-Updates
+- Bundling terpadu untuk macOS, Windows, dan Linux melalui `electron-builder`.
+- Manajemen otomatis proses daemon Gateway Python tanpa meninggalkan proses zombie.
+- Panel *About & Auto-Update* di UI desktop untuk memeriksa dan mengunduh pembaruan terbaru langsung dari GitHub Releases.
+
+---
+
+## 🗺️ Status Roadmap Pengembangan
+
+| Fase | Deskripsi Fitur Utama | Status |
+|---|---|---|
+| **Phase 0** | Discovery, PRD, Arsitektur, Model Ancaman, Data Model SQLite WAL, Protokol WebSocket/REST, ADR | **SELESAI** |
+| **Phase 1** | Thin Vertical Slice: Safe File Tools, Canonical Path Jail, Persetujuan Manual, Test Verification, Diff Artifacts | **SELESAI** |
+| **Phase 2** | Agent Skills Hub, MCP Client Manager, Progressive Disclosure (Hemat Token), Static AST Security Scanner | **SELESAI** |
+| **Phase 3** | Multi-Agent Workforce: Planner, Coder, Reviewer, Verifier DAG, Parallel Subtasks, Git Worktree Isolation | **SELESAI** |
+| **Phase 4** | Headless Browser Sandbox (Playwright DOM-First), Accessibility Tree, Scoped Computer-Use (Click, Type, Nav) | **SELESAI** |
+| **Phase 5** | Long-Term Memory (Dual Markdown + SQLite WAL, FTS Search), Scoped Profiles, Background Cron Scheduler | **SELESAI** |
+| **Phase 6** | Plugin Marketplace, Tanda Tangan Kriptografi Ed25519, SHA-256 Tamper Detection, Deep AST Security Auditor | **SELESAI** |
+| **Phase 7** | Multi-Platform Packaging (macOS DMG, Windows EXE, Linux AppImage/deb), In-App Auto-updater, CI/CD Actions | **SELESAI** |
+
+---
+
+## 🛠️ Menjalankan dari Source (Mode Pengembang)
+
+### Prasyarat:
+- Python `>= 3.11`
+- Node.js `>= 20` & npm `>= 10`
+
+### 1. Clone Repositori
 ```bash
-./run_gateway.sh
+git clone https://github.com/ARAEMXA26/Nusa-Agent.git
+cd Nusa-Agent
 ```
-Gateway akan aktif pada `http://127.0.0.1:4141` dengan endpoint:
-- REST API: `http://127.0.0.1:4141/api/...`
-- WebSocket Real-time: `ws://127.0.0.1:4141/ws/events`
-- Health Check: `http://127.0.0.1:4141/health`
-- Swagger Docs: `http://127.0.0.1:4141/docs`
 
-### 2. Menjalankan Desktop UI
-Pada terminal terpisah:
+### 2. Setup & Jalankan Gateway Server (Backend)
 ```bash
-./run_desktop.sh
+cd gateway
+python3 -m venv .venv
+source .venv/bin/activate # Pada Windows: .venv\Scripts\activate
+pip install -e .
+uvicorn nusa.main:app --host 127.0.0.1 --port 4141 --reload
 ```
-Desktop UI akan terbuka di browser Anda (atau Electron) pada `http://localhost:5173`.
 
-### 3. Menjalankan Seluruh Test Suite
+### 3. Setup & Jalankan Desktop Shell (Frontend)
+Pada terminal baru:
+```bash
+cd desktop
+npm install
+npm run dev
+```
+
+### 4. Menjalankan Seluruh Test Suite
 ```bash
 cd gateway
 source .venv/bin/activate
 pytest -v
 ```
 
-### 4. Menjalankan Verifikasi End-to-End Live
-Untuk memverifikasi alur penuh secara live (proyek nyata, WebSocket nyata, approval nyata, patch file nyata di disk, dan test verifikasi nyata):
+### 5. Membangun Paket Distribusi Mandiri
 ```bash
-# Pastikan gateway sedang berjalan, lalu:
-cd gateway
-source .venv/bin/activate
-python verify_live.py
+./scripts/package_release.sh
 ```
 
 ---
 
-## Status Milestone & Roadmap
+## 📄 Lisensi
 
-| Fase | Deskripsi | Status |
-|---|---|---|
-| **Phase 0** | Discovery, PRD, Architecture, Threat Model, Data Model, Protocol, ADR | **SELESAI** |
-| **Phase 1** | Thin Vertical Slice (Real file read, patch, approval, test verify, diff artifact, restart recovery) | **SELESAI** |
-| **Phase 2** | Skills Hub, MCP Manager, Progressive Disclosure, Static Security Scanner | **SELESAI** |
-| **Phase 3** | Multi-Agent Workforce, Parallel Task Graph, Git Worktree Isolation | **SELESAI** |
-| **Phase 4** | Browser Sandbox (Playwright DOM-first) & Scoped Computer-Use | **SELESAI** |
-| **Phase 5** | Long-Term Memory, Scoped Profiles, Cron Scheduler | **SELESAI** |
-| **Phase 6** | Plugin Marketplace, Signing & Static Scanner | **SELESAI** |
-| **Phase 7** | Multi-Platform Packaging (macOS dmg, Windows exe, Linux AppImage) & Auto-update | *Milestone Berikutnya* |
-
----
-
-## Lisensi
-Proyek ini dilisensikan di bawah [Apache License 2.0](LICENSE).
+Nusa Agent dilisensikan di bawah lisensi terbuka [Apache License 2.0](LICENSE).

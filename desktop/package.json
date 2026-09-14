@@ -1,6 +1,9 @@
 {
   "name": "nusa-desktop",
   "version": "0.1.0",
+  "description": "Local-First Autonomous AI Agent Command Center across desktop platforms",
+  "author": "Nusa Agent Contributors <contact@nusa-agent.dev>",
+  "license": "Apache-2.0",
   "private": true,
   "type": "module",
   "main": "dist-electron/main.js",
@@ -10,7 +13,12 @@
     "build:electron": "tsc -p tsconfig.electron.json",
     "build": "npm run build:app && npm run build:electron",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "pack:dir": "electron-builder --dir --config electron-builder.json",
+    "package:mac": "electron-builder --mac --config electron-builder.json",
+    "package:win": "electron-builder --win --config electron-builder.json",
+    "package:linux": "electron-builder --linux --config electron-builder.json",
+    "package:all": "electron-builder -mwl --config electron-builder.json"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -26,6 +34,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
     "typescript": "^5.7.2",
