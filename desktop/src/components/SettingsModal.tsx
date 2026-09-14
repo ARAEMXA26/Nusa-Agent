@@ -6,7 +6,6 @@ import {
   Cpu,
   X,
   RefreshCw,
-  CheckCircle2,
   Download,
   Laptop,
   Monitor,
@@ -45,6 +44,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateResult, setUpdateResult] = useState<any>(null);
   const [showAllDownloads, setShowAllDownloads] = useState(false);
+  const [installingUpdate, setInstallingUpdate] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState<{ percent: number; status: string } | null>(null);
+  const [installMessage, setInstallMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('http://127.0.0.1:4141/api/settings')
@@ -66,9 +68,45 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
       });
     }
 
+    // Register update progress listener
+    if ((window as any).nusa?.onUpdateProgress) {
+      (window as any).nusa.onUpdateProgress((data: any) => {
+        setUpdateProgress(data);
+        if (data.status) {
+          setInstallMessage(data.status);
+        }
+      });
+    }
+
     // Auto-fetch update status and device downloads
     handleCheckUpdates();
   }, []);
+
+  const handleAutoInstall = async (url?: string) => {
+    setInstallingUpdate(true);
+    setInstallMessage('Menghubungi server rilis dan memulai pengunduhan...');
+    setUpdateProgress({ percent: 5, status: 'Memulai proses pembaruan otomatis...' });
+    try {
+      if ((window as any).nusa?.installUpdate) {
+        const res = await (window as any).nusa.installUpdate(url);
+        if (!res.success) {
+          setInstallMessage(`Gagal memperbarui: ${res.error || 'Terjadi kesalahan sistem'}`);
+          setInstallingUpdate(false);
+        }
+      } else {
+        // Fallback simulation in browser preview
+        for (let p = 10; p <= 100; p += 15) {
+          setUpdateProgress({ percent: p, status: `Mengunduh berkas rilis (${p}%)...` });
+          await new Promise((r) => setTimeout(r, 250));
+        }
+        setInstallMessage('Pembaruan berhasil disimulasikan! (Web mode)');
+        setInstallingUpdate(false);
+      }
+    } catch (err: any) {
+      setInstallMessage(`Gagal: ${err.message}`);
+      setInstallingUpdate(false);
+    }
+  };
 
   const handleCheckUpdates = async () => {
     setCheckingUpdate(true);
@@ -439,8 +477,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 </div>
               )}
 
-              {/* Active Device Quick Download Card */}
-              <div className="p-3.5 rounded-lg bg-indigo-950/30 border border-indigo-800/50 space-y-2.5">
+              {/* Active Device Quick Download & 1-Click In-App Auto Update Card */}
+              <div className="p-3.5 rounded-lg bg-indigo-950/30 border border-indigo-800/50 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
                     <Monitor className="w-3.5 h-3.5" />
@@ -453,26 +491,62 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   )}
                 </div>
 
-                {updateResult?.deviceDownloadUrl ? (
-                  <a
-                    href={updateResult.deviceDownloadUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition-all shadow-md shadow-indigo-600/20"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>
-                      {updateResult.updateAvailable
-                        ? `Unduh Pembaruan Terbaru (${updateResult.deviceDownloadName || 'Installer'})`
-                        : `Unduh Installer Resmi (${updateResult.deviceDownloadName || 'Installer'})`}
-                    </span>
-                  </a>
-                ) : (
-                  <div className="text-xs text-neutral-400 py-1 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Anda sedang menjalankan versi stabil Nusa Agent.</span>
+                {/* Live Progress Bar when updating */}
+                {installingUpdate && updateProgress && (
+                  <div className="p-3 rounded-lg bg-neutral-900/90 border border-indigo-800/60 space-y-2">
+                    <div className="flex items-center justify-between text-xs text-indigo-200">
+                      <span className="flex items-center gap-2">
+                        <RefreshCw className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
+                        {updateProgress.status}
+                      </span>
+                      <span className="font-mono font-semibold text-indigo-300">{updateProgress.percent}%</span>
+                    </div>
+                    <div className="w-full bg-neutral-800 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full transition-all duration-300 rounded-full"
+                        style={{ width: `${updateProgress.percent}%` }}
+                      />
+                    </div>
                   </div>
                 )}
+
+                {installMessage && !installingUpdate && (
+                  <div className="p-2.5 rounded-lg bg-neutral-900 border border-neutral-700 text-xs text-neutral-300">
+                    {installMessage}
+                  </div>
+                )}
+
+                {/* Primary Action: 1-Click Automatic In-App Update */}
+                <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleAutoInstall(updateResult?.deviceDownloadUrl)}
+                    disabled={installingUpdate}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition-all shadow-md shadow-emerald-600/20 disabled:opacity-50"
+                  >
+                    <Sparkles className="w-4 h-4 text-emerald-200" />
+                    <span>
+                      {installingUpdate
+                        ? 'Sedang Memasang Pembaruan...'
+                        : updateResult?.updateAvailable
+                        ? `Pasang Pembaruan v${updateResult.latestVersion} Otomatis`
+                        : 'Perbarui / Pasang Ulang Otomatis (Tanpa Unduh Manual)'}
+                    </span>
+                  </button>
+
+                  {updateResult?.deviceDownloadUrl && (
+                    <a
+                      href={updateResult.deviceDownloadUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white font-medium text-xs transition-colors border border-neutral-700"
+                      title="Unduh berkas instalasi secara manual jika diperlukan"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Unduh Berkas</span>
+                    </a>
+                  )}
+                </div>
               </div>
 
               {/* Collapsible: All Available Device Downloads */}

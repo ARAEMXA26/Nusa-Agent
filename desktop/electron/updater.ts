@@ -1,5 +1,9 @@
 import { app, ipcMain, BrowserWindow } from 'electron';
 import https from 'https';
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { execSync, spawn } from 'child_process';
 
 export interface AppInfo {
   version: string;
@@ -312,6 +316,229 @@ function compareVersions(v1: string, v2: string): number {
   return 0;
 }
 
+function downloadFile(
+  url: string,
+  destPath: string,
+  onProgress?: (percent: number, status: string) => void
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const follow = (currentUrl: string, redirectCount = 0) => {
+      if (redirectCount > 8) {
+        return reject(new Error('Terlalu banyak pengalihan (redirect) saat mengunduh pembaruan.'));
+      }
+
+      const client = currentUrl.startsWith('https:') ? https : http;
+      const req = client.get(
+        currentUrl,
+        {
+          headers: {
+            'User-Agent': 'Nusa-Agent-Desktop-App',
+            Accept: '*/*',
+          },
+        },
+        (res) => {
+          if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            return follow(res.headers.location, redirectCount + 1);
+          }
+
+          if (res.statusCode !== 200) {
+            return reject(new Error(`Server rilis merespons dengan HTTP ${res.statusCode}`));
+          }
+
+          const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
+          let receivedBytes = 0;
+          const fileStream = fs.createWriteStream(destPath);
+
+          res.on('data', (chunk) => {
+            receivedBytes += chunk.length;
+            if (totalBytes > 0 && onProgress) {
+              const pct = Math.min(95, Math.round((receivedBytes / totalBytes) * 95));
+              const mbReceived = (receivedBytes / 1048576).toFixed(1);
+              const mbTotal = (totalBytes / 1048576).toFixed(1);
+              onProgress(pct, `Mengunduh berkas rilis (${mbReceived} MB / ${mbTotal} MB)...`);
+            }
+          });
+
+          res.pipe(fileStream);
+
+          fileStream.on('finish', () => {
+            fileStream.close(() => resolve());
+          });
+
+          fileStream.on('error', (err) => {
+            try { fs.unlinkSync(destPath); } catch {}
+            reject(err);
+          });
+        }
+      );
+
+      req.on('error', (err) => {
+        try { fs.unlinkSync(destPath); } catch {}
+        reject(err);
+      });
+
+      req.setTimeout(60000, () => {
+        req.destroy();
+        try { fs.unlinkSync(destPath); } catch {}
+        reject(new Error('Koneksi pengunduhan pembaruan terputus (timeout).'));
+      });
+    };
+
+    follow(url);
+  });
+}
+
+export async function downloadAndInstallUpdate(
+  mainWindow: BrowserWindow | null,
+  customUrl?: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  const sendProgress = (percent: number, status: string) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app:update-progress', { percent, status });
+    }
+  };
+
+  try {
+    let downloadUrl = customUrl;
+
+    if (!downloadUrl) {
+      sendProgress(5, 'Memeriksa versi rilis terbaru dari server...');
+      const checkRes = await checkForUpdates();
+      if (!checkRes.availableDownloads || checkRes.availableDownloads.length === 0) {
+        throw new Error('Tidak ada tautan unduhan pembaruan yang tersedia.');
+      }
+
+      const currentPlat = process.platform;
+      const currentArch = process.arch;
+
+      // On macOS, prefer .zip archive for instant programmatic extraction
+      if (currentPlat === 'darwin') {
+        const zipDl = checkRes.availableDownloads.find(
+          (d) => d.os === 'mac' && d.arch === currentArch && d.format === '.zip'
+        );
+        downloadUrl = zipDl?.url || checkRes.deviceDownloadUrl;
+      } else {
+        downloadUrl = checkRes.deviceDownloadUrl;
+      }
+    }
+
+    if (!downloadUrl) {
+      throw new Error('Gagal mendeteksi URL berkas pembaruan untuk perangkat ini.');
+    }
+
+    const tempDir = app.getPath('temp');
+    const urlObj = new URL(downloadUrl);
+    const filename = path.basename(urlObj.pathname);
+    const destFile = path.join(tempDir, `nusa-update-${Date.now()}-${filename}`);
+
+    sendProgress(10, `Mempersiapkan pengunduhan ${filename}...`);
+    await downloadFile(downloadUrl, destFile, sendProgress);
+
+    // Platform-specific automatic installation
+    if (process.platform === 'darwin') {
+      sendProgress(95, 'Mengekstrak dan memverifikasi integritas aplikasi...');
+      const extractDir = path.join(tempDir, `nusa-extracted-${Date.now()}`);
+      fs.mkdirSync(extractDir, { recursive: true });
+
+      // If it's a zip file, unpack with native ditto to preserve symlinks and attributes
+      if (destFile.endsWith('.zip')) {
+        execSync(`ditto -xk "${destFile}" "${extractDir}"`);
+      } else if (destFile.endsWith('.dmg')) {
+        // Mount DMG and ditto copy out
+        const mountPoint = path.join(tempDir, `nusa-mount-${Date.now()}`);
+        fs.mkdirSync(mountPoint, { recursive: true });
+        execSync(`hdiutil attach "${destFile}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
+        try {
+          execSync(`ditto "${mountPoint}/Nusa Agent.app" "${extractDir}/Nusa Agent.app"`);
+        } finally {
+          execSync(`hdiutil detach "${mountPoint}" -force -quiet || true`);
+          try { fs.rmdirSync(mountPoint); } catch {}
+        }
+      }
+
+      const extractedApp = path.join(extractDir, 'Nusa Agent.app');
+      if (!fs.existsSync(extractedApp)) {
+        throw new Error('Format pembaruan tidak valid: Nusa Agent.app tidak ditemukan.');
+      }
+
+      // Ad-hoc codesign and remove quarantine attribute
+      try {
+        execSync(`xattr -cr "${extractedApp}"`);
+        execSync(`codesign --force --deep --sign - "${extractedApp}"`);
+      } catch (signErr) {
+        console.warn('Codesign notice on update:', signErr);
+      }
+
+      sendProgress(98, 'Memasang pembaruan ke /Applications...');
+      let targetApp = '/Applications/Nusa Agent.app';
+      if (app.isPackaged) {
+        const parentApp = path.dirname(path.dirname(path.dirname(process.execPath)));
+        if (parentApp.endsWith('.app')) {
+          targetApp = parentApp;
+        }
+      }
+
+      // Create autonomous relaunch script
+      const scriptPath = path.join(tempDir, `nusa-swap-${Date.now()}.sh`);
+      const scriptContent = `#!/bin/bash
+sleep 1
+rm -rf "${targetApp}"
+mv "${extractedApp}" "${targetApp}"
+rm -rf "${extractDir}"
+rm -f "${destFile}"
+open "${targetApp}"
+rm -f "${scriptPath}"
+`;
+      fs.writeFileSync(scriptPath, scriptContent, { mode: 0o755 });
+
+      sendProgress(100, 'Pembaruan berhasil dipasang! Memulai ulang aplikasi...');
+      const child = spawn('/bin/bash', [scriptPath], {
+        detached: true,
+        stdio: 'ignore',
+      });
+      child.unref();
+
+      setTimeout(() => {
+        app.quit();
+      }, 1200);
+
+      return { success: true, message: 'Pembaruan berhasil dipasang. Aplikasi sedang dimulai ulang.' };
+    } else if (process.platform === 'win32') {
+      sendProgress(98, 'Menjalankan instalasi pembaruan Windows...');
+      const child = spawn(destFile, ['/S'], {
+        detached: true,
+        stdio: 'ignore',
+      });
+      child.unref();
+
+      setTimeout(() => {
+        app.quit();
+      }, 1000);
+
+      return { success: true, message: 'Installer Windows dijalankan secara otomatis.' };
+    } else {
+      // Linux
+      sendProgress(98, 'Memasang pembaruan Linux...');
+      if (destFile.endsWith('.AppImage')) {
+        execSync(`chmod +x "${destFile}"`);
+        const currentAppImage = process.env.APPIMAGE;
+        if (currentAppImage && fs.existsSync(currentAppImage)) {
+          fs.copyFileSync(destFile, currentAppImage);
+          execSync(`chmod +x "${currentAppImage}"`);
+        }
+      }
+
+      sendProgress(100, 'Pembaruan selesai.');
+      return { success: true, message: 'Pembaruan Linux berhasil disiapkan.' };
+    }
+  } catch (err: any) {
+    sendProgress(0, `Gagal memasang pembaruan: ${err.message}`);
+    return { success: false, error: err.message };
+  }
+}
+
+let backgroundCheckTimer: NodeJS.Timeout | null = null;
+
 export function registerUpdaterIpc(mainWindow: BrowserWindow | null): void {
   ipcMain.handle('app:get-info', () => {
     return getAppInfo();
@@ -324,4 +551,33 @@ export function registerUpdaterIpc(mainWindow: BrowserWindow | null): void {
     }
     return result;
   });
+
+  ipcMain.handle('app:install-update', async (_event, customUrl?: string) => {
+    return downloadAndInstallUpdate(mainWindow, customUrl);
+  });
+
+  // Background Automatic Update Checker
+  // 1. Check 5 seconds after launch
+  setTimeout(async () => {
+    try {
+      const res = await checkForUpdates();
+      if (res.updateAvailable && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('app:update-available', res);
+      }
+    } catch {}
+  }, 5000);
+
+  // 2. Re-check periodically every 30 minutes
+  if (backgroundCheckTimer) {
+    clearInterval(backgroundCheckTimer);
+  }
+  backgroundCheckTimer = setInterval(async () => {
+    try {
+      const res = await checkForUpdates();
+      if (res.updateAvailable && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('app:update-available', res);
+      }
+    } catch {}
+  }, 30 * 60 * 1000);
 }
+

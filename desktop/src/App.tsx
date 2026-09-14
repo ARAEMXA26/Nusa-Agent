@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles } from 'lucide-react';
 import { useGateway } from './hooks/useGateway';
 import { Sidebar } from './components/Sidebar';
 import { AgentManager } from './components/AgentManager';
@@ -36,6 +37,17 @@ export const App: React.FC = () => {
   const [showBrowser, setShowBrowser] = useState(false);
   const [showMemory, setShowMemory] = useState(false);
   const [showPlugins, setShowPlugins] = useState(false);
+  const [updateAvailableInfo, setUpdateAvailableInfo] = useState<any>(null);
+
+  useEffect(() => {
+    if ((window as any).nusa?.onUpdateAvailable) {
+      (window as any).nusa.onUpdateAvailable((info: any) => {
+        if (info?.updateAvailable) {
+          setUpdateAvailableInfo(info);
+        }
+      });
+    }
+  }, []);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-neutral-950 font-sans text-neutral-100 antialiased">
@@ -97,6 +109,40 @@ export const App: React.FC = () => {
         isOpen={showPlugins}
         onClose={() => setShowPlugins(false)}
       />
+
+      {/* Floating Auto-Update Notification Banner */}
+      {updateAvailableInfo && (
+        <div className="fixed bottom-5 right-5 z-50 p-4 rounded-xl bg-neutral-900/95 border border-emerald-500/50 shadow-2xl backdrop-blur-md flex items-center gap-3.5 max-w-md animate-in fade-in slide-in-from-bottom-5">
+          <div className="w-10 h-10 rounded-lg bg-emerald-950/80 border border-emerald-700/60 flex items-center justify-center shrink-0 text-emerald-400 shadow-inner">
+            <Sparkles className="w-5 h-5 animate-pulse" />
+          </div>
+          <div className="flex-1 space-y-0.5">
+            <h5 className="font-semibold text-xs text-neutral-100 flex items-center gap-1.5">
+              <span>Pembaruan v{updateAvailableInfo.latestVersion} Tersedia!</span>
+            </h5>
+            <p className="text-[11px] text-neutral-400 leading-tight">
+              Pembaruan siap dipasang langsung secara otomatis tanpa perlu unduh ulang.
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => {
+                setShowSettings(true);
+                setUpdateAvailableInfo(null);
+              }}
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors shadow-md shadow-emerald-600/20"
+            >
+              Perbarui
+            </button>
+            <button
+              onClick={() => setUpdateAvailableInfo(null)}
+              className="px-2 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs transition-colors"
+            >
+              Nanti
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

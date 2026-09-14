@@ -57,6 +57,12 @@ fi
 echo "[*] Step 7: Publishing and synchronizing all assets to GitHub Releases..."
 python3 "$ROOT_DIR/scripts/publish_release.py"
 
+# 8. Synchronize locally installed /Applications/Nusa Agent.app
+if [ -d "/Applications/Nusa Agent.app" ]; then
+  echo "[*] Step 8: Synchronizing updated build directly into /Applications/Nusa Agent.app..."
+  bash "$ROOT_DIR/scripts/sync_to_applications.sh"
+fi
+
 echo "====================================================="
 echo " [SUCCESS] All devices built, pushed, and published! "
 echo " Releases: https://github.com/ARAEMXA26/Nusa-Agent/releases/latest"

@@ -19,6 +19,7 @@
     "package:win": "electron-builder --win --config electron-builder.json",
     "package:linux": "electron-builder --linux --config electron-builder.json",
     "package:all": "electron-builder -mwl --config electron-builder.json",
+    "sync:app": "bash ../scripts/sync_to_applications.sh",
     "release:all": "bash ../scripts/build_all_and_publish.sh"
   },
   "dependencies": {
