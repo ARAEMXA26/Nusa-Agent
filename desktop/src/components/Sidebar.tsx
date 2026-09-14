@@ -9,7 +9,8 @@ import {
   ShieldCheck, 
   FolderPlus,
   Sparkles,
-  Network
+  Network,
+  Globe
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -24,6 +25,7 @@ interface SidebarProps {
   onOpenSettings: () => void;
   onOpenSkills: () => void;
   onOpenMcp: () => void;
+  onOpenBrowser: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -38,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSettings,
   onOpenSkills,
   onOpenMcp,
+  onOpenBrowser,
 }) => {
   const { t, language, setLanguage } = useI18n();
   const [showNewProjModal, setShowNewProjModal] = useState(false);
@@ -147,25 +150,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </div>
 
-      {/* Footer Controls: Skills, MCP, Language & Settings */}
+      {/* Footer Controls: Skills, MCP, Browser, Language & Settings */}
       <div className="p-2.5 border-t border-neutral-800 space-y-2">
-        <div className="grid grid-cols-2 gap-1.5 text-xs text-neutral-400">
+        <div className="grid grid-cols-3 gap-1.5 text-xs text-neutral-400">
           <button
             onClick={onOpenSkills}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-neutral-800/40 hover:bg-neutral-800 hover:text-indigo-300 transition-colors"
+            className="flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg bg-neutral-800/40 hover:bg-neutral-800 hover:text-indigo-300 transition-colors"
             title={t('skills_hub')}
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="truncate">{t('skills_hub')}</span>
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+            <span className="truncate text-[11px]">{t('skills_hub')}</span>
           </button>
 
           <button
             onClick={onOpenMcp}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-neutral-800/40 hover:bg-neutral-800 hover:text-emerald-300 transition-colors"
+            className="flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg bg-neutral-800/40 hover:bg-neutral-800 hover:text-emerald-300 transition-colors"
             title={t('mcp_manager')}
           >
-            <Network className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="truncate">{t('mcp_manager')}</span>
+            <Network className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="truncate text-[11px]">{t('mcp_manager')}</span>
+          </button>
+
+          <button
+            onClick={onOpenBrowser}
+            className="flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg bg-neutral-800/40 hover:bg-neutral-800 hover:text-sky-300 transition-colors"
+            title="Browser Sandbox"
+          >
+            <Globe className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            <span className="truncate text-[11px]">Browser</span>
           </button>
         </div>
 

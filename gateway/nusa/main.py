@@ -14,8 +14,10 @@ from nusa.api import (
     skills_router,
     mcp_router,
     workforce_router,
+    browser_router,
     websocket_router,
 )
+from nusa.browser.manager import browser_manager
 
 
 @asynccontextmanager
@@ -24,7 +26,8 @@ async def lifespan(app: FastAPI):
     config.init_directories()
     init_db(config.db_path)
     yield
-    # Shutdown
+    # Shutdown: clean up browser resources
+    await browser_manager.close()
 
 
 app = FastAPI(
@@ -52,6 +55,7 @@ app.include_router(settings_router)
 app.include_router(skills_router)
 app.include_router(mcp_router)
 app.include_router(workforce_router)
+app.include_router(browser_router)
 app.include_router(websocket_router)
 
 

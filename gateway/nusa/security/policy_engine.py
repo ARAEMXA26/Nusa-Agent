@@ -71,8 +71,47 @@ class PolicyEngine:
                 preview=f"$ {cmd}",
             )
 
-        # 3. Read-only tools default to ALLOW (verified inside workspace)
-        if tool_name in ("file_read", "file_list", "file_search", "git_status", "git_diff", "run_test"):
+        if tool_name == "browser_navigate":
+            url = arguments.get("url", "")
+            return PolicyEvaluation(
+                decision=PolicyDecision.ASK,
+                reason=f"Navigating to external web page requires human approval",
+                requires_approval=True,
+                action_type=tool_name,
+                preview=f"Target URL: {url}",
+            )
+
+        if tool_name in ("screen_capture", "system_keypress", "system_mouse_click"):
+            desc = (
+                f"Capture full desktop screen"
+                if tool_name == "screen_capture"
+                else f"Send key '{arguments.get('key')}'"
+                if tool_name == "system_keypress"
+                else f"Click at ({arguments.get('x')}, {arguments.get('y')})"
+            )
+            return PolicyEvaluation(
+                decision=PolicyDecision.ASK,
+                reason=f"Operating system computer-use action requires human authorization",
+                requires_approval=True,
+                action_type=tool_name,
+                preview=f"Computer Action: {tool_name} | {desc}",
+            )
+
+        # 3. Read-only and active browser inspection tools default to ALLOW (verified inside workspace)
+        if tool_name in (
+            "file_read",
+            "file_list",
+            "file_search",
+            "git_status",
+            "git_diff",
+            "run_test",
+            "browser_snapshot",
+            "browser_click",
+            "browser_type",
+            "browser_screenshot",
+            "tool_search_mcp",
+            "skill_activate",
+        ):
             return PolicyEvaluation(
                 decision=PolicyDecision.ALLOW,
                 reason="Safe read/verification operation inside workspace",

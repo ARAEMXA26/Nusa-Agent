@@ -11,6 +11,18 @@ from nusa.tools.file_tools import (
 from nusa.tools.test_tools import tool_run_test
 from nusa.tools.shell_tools import tool_shell_execute
 from nusa.tools.git_tools import tool_git_status, tool_git_diff
+from nusa.tools.browser import (
+    tool_browser_navigate,
+    tool_browser_snapshot,
+    tool_browser_click,
+    tool_browser_type,
+    tool_browser_screenshot,
+)
+from nusa.tools.computer import (
+    tool_screen_capture,
+    tool_system_keypress,
+    tool_system_mouse_click,
+)
 from nusa.mcp.manager import mcp_manager
 from nusa.skills.manager import skill_manager
 
@@ -174,6 +186,122 @@ class ToolRegistry:
             },
         )
 
+        self._tools["browser_navigate"] = ToolDefinition(
+            name="browser_navigate",
+            description="Navigate to a web URL and retrieve clean DOM accessibility tree with interactive element IDs.",
+            parameters=[
+                ToolParameter(name="url", type="string", description="Full web URL starting with http:// or https://"),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "Target website URL"}
+                },
+                "required": ["url"],
+            },
+        )
+
+        self._tools["browser_snapshot"] = ToolDefinition(
+            name="browser_snapshot",
+            description="Extract fresh DOM accessibility snapshot and text preview from currently opened browser page.",
+            parameters=[],
+            parameters_schema={"type": "object", "properties": {}},
+        )
+
+        self._tools["browser_click"] = ToolDefinition(
+            name="browser_click",
+            description="Click on an interactive element by element ID (e.g. 'el-1') or CSS selector.",
+            parameters=[
+                ToolParameter(name="target", type="string", description="Element ID or selector to click"),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "target": {"type": "string", "description": "Element ID (e.g. 'el-1') or CSS selector"}
+                },
+                "required": ["target"],
+            },
+        )
+
+        self._tools["browser_type"] = ToolDefinition(
+            name="browser_type",
+            description="Type text into an input field or textarea identified by element ID or selector.",
+            parameters=[
+                ToolParameter(name="target", type="string", description="Target element ID or selector"),
+                ToolParameter(name="text", type="string", description="Text to enter"),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "target": {"type": "string", "description": "Target element ID or selector"},
+                    "text": {"type": "string", "description": "Text to type into input"},
+                },
+                "required": ["target", "text"],
+            },
+        )
+
+        self._tools["browser_screenshot"] = ToolDefinition(
+            name="browser_screenshot",
+            description="Capture full visual screenshot of the current browser page.",
+            parameters=[
+                ToolParameter(name="filename", type="string", description="Output filename for PNG", required=False),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "filename": {"type": "string", "description": "Output PNG filename"}
+                },
+            },
+        )
+
+        self._tools["screen_capture"] = ToolDefinition(
+            name="screen_capture",
+            description="Capture user desktop display screen (requires approval).",
+            parameters=[
+                ToolParameter(name="filename", type="string", description="Output filename for PNG", required=False),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "filename": {"type": "string", "description": "Output PNG filename"}
+                },
+            },
+        )
+
+        self._tools["system_keypress"] = ToolDefinition(
+            name="system_keypress",
+            description="Emulate keyboard key press (e.g. 'Return', 'Escape', 'Tab') (requires approval).",
+            parameters=[
+                ToolParameter(name="key", type="string", description="Key name to send"),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "key": {"type": "string", "description": "Key name (e.g. 'return', 'tab', 'escape')"}
+                },
+                "required": ["key"],
+            },
+        )
+
+        self._tools["system_mouse_click"] = ToolDefinition(
+            name="system_mouse_click",
+            description="Emulate mouse click at coordinate (x, y) within screen boundaries (requires approval).",
+            parameters=[
+                ToolParameter(name="x", type="integer", description="X screen coordinate"),
+                ToolParameter(name="y", type="integer", description="Y screen coordinate"),
+                ToolParameter(name="button", type="string", description="'left' or 'right'", required=False),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "x": {"type": "integer", "description": "X screen coordinate"},
+                    "y": {"type": "integer", "description": "Y screen coordinate"},
+                    "button": {"type": "string", "description": "Mouse button: 'left' or 'right'"},
+                },
+                "required": ["x", "y"],
+            },
+        )
+
     def get_tool_definitions(self) -> list[ToolDefinition]:
         return list(self._tools.values())
 
@@ -242,6 +370,27 @@ class ToolRegistry:
             return await tool_git_status(workspace_root)
         elif tool_name == "git_diff":
             return await tool_git_diff(workspace_root)
+        elif tool_name == "browser_navigate":
+            return await tool_browser_navigate(workspace_root, arguments["url"])
+        elif tool_name == "browser_snapshot":
+            return await tool_browser_snapshot(workspace_root)
+        elif tool_name == "browser_click":
+            return await tool_browser_click(workspace_root, arguments["target"])
+        elif tool_name == "browser_type":
+            return await tool_browser_type(workspace_root, arguments["target"], arguments["text"])
+        elif tool_name == "browser_screenshot":
+            return await tool_browser_screenshot(workspace_root, arguments.get("filename", "screenshot.png"))
+        elif tool_name == "screen_capture":
+            return await tool_screen_capture(workspace_root, arguments.get("filename", "desktop_screenshot.png"))
+        elif tool_name == "system_keypress":
+            return await tool_system_keypress(workspace_root, arguments["key"])
+        elif tool_name == "system_mouse_click":
+            return await tool_system_mouse_click(
+                workspace_root,
+                int(arguments["x"]),
+                int(arguments["y"]),
+                arguments.get("button", "left"),
+            )
 
         return {"success": False, "error": f"Unhandled tool '{tool_name}'"}
 

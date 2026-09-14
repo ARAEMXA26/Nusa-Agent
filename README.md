@@ -39,7 +39,13 @@ Nusa Agent adalah aplikasi desktop AI agent multi-platform (macOS, Windows, Linu
   - **Quarantine Isolation**: Menangani server MCP yang berperilaku aneh atau gagal schema validation.
   - Built-in Reference MCP Server (`gateway/nusa/mcp/reference_server.py`) siap pakai out-of-the-box (`mcp_system_info`, `mcp_hash_calculator`, `mcp_echo`).
 - **Multi-Provider & Offline Fallback**: OpenAI, Anthropic, Ollama, OpenRouter, serta Deterministic Runner bawaan.
-- **Bilingual Interface & Interactive Workforce UI**: Antarmuka responsif Bahasa Indonesia dan English dengan modal manajer Skills, MCP, dan visualisasi interaktif pipeline DAG Multi-Agent di Desktop Shell.
+- **Bilingual Interface & Interactive Multi-Agent UI**: Antarmuka responsif Bahasa Indonesia dan English dengan modal manajer Skills, MCP, Browser Sandbox DOM-First, dan visualisasi interaktif pipeline DAG Multi-Agent di Desktop Shell.
+- **Browser Automation Sandbox & Scoped Computer-Use (Phase 4)**:
+  - **DOM-First Web Automation**: Otomasi Playwright headless Chromium yang fokus pada DOM accessibility tree dan representasi teks bersih alih-alih screenshot visual besar, menghemat token context window LLM.
+  - **SSRF & Network Security Engine**: Memblokir skema berbahaya (`file://`, `data:`, `javascript:`), local loopback (`127.0.0.1`, `localhost`), link-local metadata cloud (`169.254.169.254`), serta subnet privat. Mendukung domain allowlist/blocklist kustom.
+  - **Interactive Element Tagging**: Memberikan ID deterministik (`[button]`, `[input]`, `[link]`) untuk penargetan interaksi klik dan ketik yang akurat.
+  - **Scoped Computer-Use Gating**: Emulasi keystroke dan mouse click koordinat layar terikat boundary `[0..3840, 0..2160]` dengan penegakan izin Tier 2 `ASK` (wajib approval manusia).
+  - **Desktop Browser Inspector Modal**: Antarmuka penjelajah URL langsung, tree inspector interaktif, dan penampil snapshot visual.
 
 ---
 
@@ -135,8 +141,8 @@ python verify_live.py
 | **Phase 1** | Thin Vertical Slice (Real file read, patch, approval, test verify, diff artifact, restart recovery) | **SELESAI** |
 | **Phase 2** | Skills Hub, MCP Manager, Progressive Disclosure, Static Security Scanner | **SELESAI** |
 | **Phase 3** | Multi-Agent Workforce, Parallel Task Graph, Git Worktree Isolation | **SELESAI** |
-| **Phase 4** | Browser Sandbox (Playwright DOM-first) & Scoped Computer-Use | *Milestone Berikutnya* |
-| **Phase 5** | Long-Term Memory, Scoped Profiles, Cron Scheduler | Terjadwal |
+| **Phase 4** | Browser Sandbox (Playwright DOM-first) & Scoped Computer-Use | **SELESAI** |
+| **Phase 5** | Long-Term Memory, Scoped Profiles, Cron Scheduler | *Milestone Berikutnya* |
 | **Phase 6** | Plugin Marketplace, Signing & Static Scanner | Terjadwal |
 | **Phase 7** | Multi-Platform Packaging (macOS dmg, Windows exe, Linux AppImage) & Auto-update | Terjadwal |
 

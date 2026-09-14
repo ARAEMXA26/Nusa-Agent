@@ -8,6 +8,7 @@ import { ArtifactPanel } from './components/ArtifactPanel';
 import { SettingsModal } from './components/SettingsModal';
 import { SkillsManagerModal } from './components/SkillsManagerModal';
 import { McpManagerModal } from './components/McpManagerModal';
+import { BrowserSandboxModal } from './components/BrowserSandboxModal';
 
 export const App: React.FC = () => {
   const {
@@ -30,6 +31,7 @@ export const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showSkills, setShowSkills] = useState(false);
   const [showMcp, setShowMcp] = useState(false);
+  const [showBrowser, setShowBrowser] = useState(false);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-neutral-950 font-sans text-neutral-100 antialiased">
@@ -46,6 +48,7 @@ export const App: React.FC = () => {
         onOpenSettings={() => setShowSettings(true)}
         onOpenSkills={() => setShowSkills(true)}
         onOpenMcp={() => setShowMcp(true)}
+        onOpenBrowser={() => setShowBrowser(true)}
       />
 
       {/* Main Workspace Area */}
@@ -78,6 +81,7 @@ export const App: React.FC = () => {
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showSkills && <SkillsManagerModal onClose={() => setShowSkills(false)} />}
       {showMcp && <McpManagerModal onClose={() => setShowMcp(false)} />}
+      <BrowserSandboxModal isOpen={showBrowser} onClose={() => setShowBrowser(false)} />
     </div>
   );
 };

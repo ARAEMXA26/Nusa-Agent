@@ -169,6 +169,40 @@ async def run_live_verification():
             assert "verifier" in roles
             print("[SUCCESS] All Phase 3 (Workforce DAG & Subtasks) assertions verified on live server!")
 
+            # 10. Phase 4 Verification: Browser Sandbox & Scoped Computer-Use
+            print("\n=== VERIFYING PHASE 4: BROWSER SANDBOX & SCOPED COMPUTER-USE ===")
+            
+            # Query browser status
+            browser_status_req = urllib.request.Request(f"{BASE_URL}/api/browser/status")
+            with urllib.request.urlopen(browser_status_req) as resp:
+                bstatus = json.loads(resp.read().decode())
+            assert "is_open" in bstatus
+            print(f"[OK] Browser status checked: is_open={bstatus['is_open']}")
+
+            # Close browser session endpoint
+            close_req = urllib.request.Request(f"{BASE_URL}/api/browser/close", data=b"{}", headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(close_req) as resp:
+                close_res = json.loads(resp.read().decode())
+            assert "closed" in close_res["message"]
+            print(f"[OK] Browser close endpoint verified: {close_res['message']}")
+
+            # Verify Phase 4 tools in ToolRegistry
+            from nusa.tools.registry import tool_registry
+            p4_tools = [t.name for t in tool_registry.get_tool_definitions()]
+            for expected_tool in [
+                "browser_navigate",
+                "browser_snapshot",
+                "browser_click",
+                "browser_type",
+                "browser_screenshot",
+                "screen_capture",
+                "system_keypress",
+                "system_mouse_click",
+            ]:
+                assert expected_tool in p4_tools, f"Missing {expected_tool}"
+            print("[OK] All 8 Phase 4 Browser & Computer-Use tools registered in ToolRegistry.")
+            print("[SUCCESS] All Phase 4 assertions verified on live server!")
+
 
 if __name__ == "__main__":
     asyncio.run(run_live_verification())
