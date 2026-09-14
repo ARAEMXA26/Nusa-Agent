@@ -26,6 +26,26 @@ function createWindow() {
     },
   });
 
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+    console.error(`[Electron] Failed to load ${validatedURL}: ${errorCode} ${errorDescription}`);
+    dialog.showErrorBox(
+      'Nusa Agent UI Load Error',
+      `Gagal memuat antarmuka Nusa Agent (${errorCode}): ${errorDescription}\nPath: ${validatedURL}`
+    );
+  });
+
+  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    if (level >= 2) {
+      console.error(`[Renderer Error ${level}] ${message} (${sourceId}:${line})`);
+    }
+  });
+
+  mainWindow.webContents.on('before-input-event', (_event, input) => {
+    if (input.key === 'F12' || (input.meta && input.alt && input.key.toLowerCase() === 'i')) {
+      mainWindow?.webContents.toggleDevTools();
+    }
+  });
+
   const devUrl = 'http://localhost:5173';
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL(devUrl);

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Nusa Agent - Instant Local Sync & Application Auto-Updater
-# Immediately synchronizes the latest compiled code into /Applications/Nusa Agent.app
-# without requiring manual downloads or lengthy re-packaging.
+# Compiles and installs the fresh application bundle directly into /Applications/Nusa Agent.app
 
 set -e
 
@@ -15,48 +14,35 @@ echo "========================================================"
 echo "    NUSA AGENT - INSTANT LOCAL APPLICATION SYNC         "
 echo "========================================================"
 
-# 1. Compile fresh frontend and electron code
-echo "[*] Step 1: Compiling latest desktop UI & background processes..."
+# 1. Compile fresh frontend and electron code, package dir
+echo "[*] Step 1: Compiling latest desktop UI & electron binary..."
 cd "$DESKTOP_DIR"
 npm run build
+npx electron-builder --mac --arm64 --dir
 
-# 2. Check if destination app exists in /Applications
-if [ ! -d "$APP_TARGET" ]; then
-    echo "[*] Step 2: /Applications/Nusa Agent.app not found. Performing full initial installation..."
-    if [ ! -d "$DIST_APP" ]; then
-        echo "[*] Packaging macOS binary bundle first..."
-        npm run package:mac
-    fi
-    cp -R "$DIST_APP" /Applications/
-else
-    echo "[*] Step 2: Synchronizing compiled application bundle into $APP_TARGET..."
-    
-    # Sync dist (React UI) and dist-electron (Electron backend)
-    APP_RESOURCES="$APP_TARGET/Contents/Resources/app"
-    if [ -d "$APP_RESOURCES" ]; then
-        mkdir -p "$APP_RESOURCES/dist" "$APP_RESOURCES/dist-electron"
-        cp -R "$DESKTOP_DIR/dist/"* "$APP_RESOURCES/dist/"
-        cp -R "$DESKTOP_DIR/dist-electron/"* "$APP_RESOURCES/dist-electron/"
-        cp "$DESKTOP_DIR/package.json" "$APP_RESOURCES/"
-    fi
-    
-    # Sync Gateway Python resources if present in extraResources
-    GATEWAY_RES="$APP_TARGET/Contents/Resources/gateway"
-    if [ -d "$GATEWAY_RES" ]; then
-        rsync -a --delete --exclude="__pycache__" --exclude=".pytest_cache" --exclude=".venv" \
-            "$ROOT_DIR/gateway/" "$GATEWAY_RES/"
-        if [ -d "$ROOT_DIR/gateway/.venv" ]; then
-            ln -sfn "$ROOT_DIR/gateway/.venv" "$GATEWAY_RES/.venv"
-        fi
-    fi
+# 2. Kill any currently running instance of Nusa Agent so files can be replaced
+echo "[*] Step 2: Terminating any running instances of Nusa Agent..."
+pkill -f "Nusa Agent" 2>/dev/null || true
+sleep 1
+
+# 3. Cleanly install/replace /Applications/Nusa Agent.app
+echo "[*] Step 3: Installing fresh application bundle into $APP_TARGET..."
+rm -rf "$APP_TARGET"
+cp -R "$DIST_APP" /Applications/
+
+# 4. Link python .venv if present
+GATEWAY_RES="$APP_TARGET/Contents/Resources/gateway"
+if [ -d "$GATEWAY_RES" ] && [ -d "$ROOT_DIR/gateway/.venv" ]; then
+    echo "[*] Step 4: Linking dedicated Python gateway environment..."
+    ln -sfn "$ROOT_DIR/gateway/.venv" "$GATEWAY_RES/.venv"
 fi
 
-# 3. Ad-hoc codesign and clear quarantine attributes
-echo "[*] Step 3: Verifying macOS security signature and permissions..."
+# 5. Ad-hoc codesign and clear quarantine attributes
+echo "[*] Step 5: Applying macOS security signature & permissions..."
 xattr -cr "$APP_TARGET" 2>/dev/null || true
 codesign --force --deep --sign - "$APP_TARGET" 2>/dev/null || true
 
 echo "========================================================"
-echo " [SUCCESS] /Applications/Nusa Agent.app updated instantly!"
+echo " [SUCCESS] /Applications/Nusa Agent.app updated completely!"
 echo " You can now run Nusa Agent directly from Applications."
 echo "========================================================"
