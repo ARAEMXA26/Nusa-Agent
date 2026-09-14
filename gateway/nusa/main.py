@@ -15,18 +15,24 @@ from nusa.api import (
     mcp_router,
     workforce_router,
     browser_router,
+    memory_router,
+    profiles_router,
+    cron_router,
     websocket_router,
 )
 from nusa.browser.manager import browser_manager
+from nusa.scheduler.manager import cron_manager
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: ensure directories and database exist
+    # Startup: ensure directories, database exist, and start background cron scheduler
     config.init_directories()
     init_db(config.db_path)
+    cron_manager.start()
     yield
-    # Shutdown: clean up browser resources
+    # Shutdown: clean up cron scheduler and browser resources
+    cron_manager.stop()
     await browser_manager.close()
 
 
@@ -56,6 +62,9 @@ app.include_router(skills_router)
 app.include_router(mcp_router)
 app.include_router(workforce_router)
 app.include_router(browser_router)
+app.include_router(memory_router)
+app.include_router(profiles_router)
+app.include_router(cron_router)
 app.include_router(websocket_router)
 
 

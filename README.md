@@ -46,6 +46,12 @@ Nusa Agent adalah aplikasi desktop AI agent multi-platform (macOS, Windows, Linu
   - **Interactive Element Tagging**: Memberikan ID deterministik (`[button]`, `[input]`, `[link]`) untuk penargetan interaksi klik dan ketik yang akurat.
   - **Scoped Computer-Use Gating**: Emulasi keystroke dan mouse click koordinat layar terikat boundary `[0..3840, 0..2160]` dengan penegakan izin Tier 2 `ASK` (wajib approval manusia).
   - **Desktop Browser Inspector Modal**: Antarmuka penjelajah URL langsung, tree inspector interaktif, dan penampil snapshot visual.
+- **Long-Term Memory, Scoped Profiles & Cron Scheduler (Phase 5)**:
+  - **Long-Term Memory Subsystem**: Hirarki penyimpanan ganda Markdown (`USER.md`, `MEMORY.md`) dan basis data SQLite berindeks cepat untuk retrieval keyword/FTS dan injeksi konteks progresif tanpa pemborosan token.
+  - **Memory Self-Reflection Tools**: Agentic tools `memory_search`, `memory_store`, `memory_forget`, dan `memory_list` untuk menyimpan preferensi pengguna, aturan arsitektur, dan konteks proyek.
+  - **Scoped Profiles & Cross-Profile Soft Guard**: Profil terisolasi (`default`, `researcher`, `security-auditor`, dll.) dengan folder skill dan memori terpisah. Soft guard mencegah mutasi silang antar-profil tanpa persetujuan eksplisit.
+  - **Background Cron Task Scheduler**: Penjadwalan tugas agentik otonom berbasis sintaks cron standar (`@hourly`, `@daily`, `*/30 * * * *`, `interval:60`) dengan riwayat eksekusi lengkap (`cron_runs`).
+  - **Memory & Scheduler Desktop UI**: Modal tabulasi terpadu di Desktop Shell untuk mengelola memori proyek/global, berpindah profil aktif, dan mengatur jadwal eksekusi tugas background.
 
 ---
 
@@ -142,8 +148,8 @@ python verify_live.py
 | **Phase 2** | Skills Hub, MCP Manager, Progressive Disclosure, Static Security Scanner | **SELESAI** |
 | **Phase 3** | Multi-Agent Workforce, Parallel Task Graph, Git Worktree Isolation | **SELESAI** |
 | **Phase 4** | Browser Sandbox (Playwright DOM-first) & Scoped Computer-Use | **SELESAI** |
-| **Phase 5** | Long-Term Memory, Scoped Profiles, Cron Scheduler | *Milestone Berikutnya* |
-| **Phase 6** | Plugin Marketplace, Signing & Static Scanner | Terjadwal |
+| **Phase 5** | Long-Term Memory, Scoped Profiles, Cron Scheduler | **SELESAI** |
+| **Phase 6** | Plugin Marketplace, Signing & Static Scanner | *Milestone Berikutnya* |
 | **Phase 7** | Multi-Platform Packaging (macOS dmg, Windows exe, Linux AppImage) & Auto-update | Terjadwal |
 
 ---

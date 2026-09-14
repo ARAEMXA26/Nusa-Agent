@@ -10,7 +10,8 @@ import {
   FolderPlus,
   Sparkles,
   Network,
-  Globe
+  Globe,
+  Brain
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -26,6 +27,7 @@ interface SidebarProps {
   onOpenSkills: () => void;
   onOpenMcp: () => void;
   onOpenBrowser: () => void;
+  onOpenMemory: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -41,6 +43,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSkills,
   onOpenMcp,
   onOpenBrowser,
+  onOpenMemory,
 }) => {
   const { t, language, setLanguage } = useI18n();
   const [showNewProjModal, setShowNewProjModal] = useState(false);
@@ -150,9 +153,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </div>
 
-      {/* Footer Controls: Skills, MCP, Browser, Language & Settings */}
+      {/* Footer Controls: Skills, MCP, Browser, Memory & Cron, Language & Settings */}
       <div className="p-2.5 border-t border-neutral-800 space-y-2">
-        <div className="grid grid-cols-3 gap-1.5 text-xs text-neutral-400">
+        <div className="grid grid-cols-2 gap-1.5 text-xs text-neutral-400">
           <button
             onClick={onOpenSkills}
             className="flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg bg-neutral-800/40 hover:bg-neutral-800 hover:text-indigo-300 transition-colors"
@@ -178,6 +181,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Globe className="w-3.5 h-3.5 text-sky-400 shrink-0" />
             <span className="truncate text-[11px]">Browser</span>
+          </button>
+
+          <button
+            onClick={onOpenMemory}
+            className="flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg bg-neutral-800/40 hover:bg-neutral-800 hover:text-purple-300 transition-colors"
+            title="Memory & Cron Scheduler"
+          >
+            <Brain className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <span className="truncate text-[11px]">Memory</span>
           </button>
         </div>
 

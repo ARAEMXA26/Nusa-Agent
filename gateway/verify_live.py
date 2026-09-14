@@ -203,6 +203,71 @@ async def run_live_verification():
             print("[OK] All 8 Phase 4 Browser & Computer-Use tools registered in ToolRegistry.")
             print("[SUCCESS] All Phase 4 assertions verified on live server!")
 
+            # 11. Phase 5 Verification: Profiles, Memory Store & Cron Scheduler
+            print("\n--- Verifying Phase 5: Profiles, Memory, & Cron Scheduler ---")
+            
+            # Profiles
+            prof_req = urllib.request.Request(f"{BASE_URL}/api/profiles")
+            with urllib.request.urlopen(prof_req) as resp:
+                profiles_list = json.loads(resp.read().decode()).get("profiles", [])
+            assert len(profiles_list) >= 3
+            print(f"[OK] Profiles API active: {len(profiles_list)} profiles found.")
+
+            # Memory Store
+            mem_store_req = urllib.request.Request(
+                f"{BASE_URL}/api/memory",
+                data=json.dumps({"key": "e2e_guideline", "value": "Strict adherence to DRY and type safety", "scope": "global"}).encode(),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(mem_store_req) as resp:
+                assert resp.status == 200
+            
+            mem_search_req = urllib.request.Request(f"{BASE_URL}/api/memory?query=DRY")
+            with urllib.request.urlopen(mem_search_req) as resp:
+                search_data = json.loads(resp.read().decode())
+                assert len(search_data.get("items", [])) >= 1
+            print("[OK] Memory Store & FTS Search verified on live server.")
+
+            # Cron Scheduler
+            cron_create_req = urllib.request.Request(
+                f"{BASE_URL}/api/cron/jobs",
+                data=json.dumps({
+                    "title": "E2E Live Scheduled Task",
+                    "prompt": "Inspect pending tasks and refresh cache",
+                    "cron_expr": "@hourly",
+                    "enabled": True
+                }).encode(),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(cron_create_req) as resp:
+                cron_job_id = json.loads(resp.read().decode())["job"]["id"]
+
+            cron_run_req = urllib.request.Request(
+                f"{BASE_URL}/api/cron/jobs/{cron_job_id}/run",
+                data=b"{}",
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(cron_run_req) as resp:
+                run_res = json.loads(resp.read().decode())
+                assert run_res["run"]["status"] == "success"
+            print(f"[OK] Cron job created and executed successfully: ID {cron_job_id}")
+
+            # Clean up
+            del_cron_req = urllib.request.Request(f"{BASE_URL}/api/cron/jobs/{cron_job_id}", method="DELETE")
+            with urllib.request.urlopen(del_cron_req) as resp:
+                assert resp.status == 200
+
+            del_mem_req = urllib.request.Request(f"{BASE_URL}/api/memory/e2e_guideline", method="DELETE")
+            with urllib.request.urlopen(del_mem_req) as resp:
+                assert resp.status == 200
+            print("[OK] Phase 5 test resources cleaned up.")
+
+            # Memory Tools in Registry
+            for m_tool in ["memory_search", "memory_store", "memory_forget", "memory_list"]:
+                assert m_tool in p4_tools, f"Missing tool {m_tool}"
+            print("[OK] All 4 Memory Tools verified in ToolRegistry.")
+            print("[SUCCESS] All Phase 5 (Memory, Scoped Profiles, Cron) verified on live server!")
+
 
 if __name__ == "__main__":
     asyncio.run(run_live_verification())

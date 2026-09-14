@@ -9,6 +9,9 @@ from nusa.api.routes_skills import router as skills_router
 from nusa.api.routes_mcp import router as mcp_router
 from nusa.api.routes_workforce import router as workforce_router
 from nusa.api.routes_browser import router as browser_router
+from nusa.api.routes_memory import router as memory_router
+from nusa.api.routes_profiles import router as profiles_router
+from nusa.api.routes_cron import router as cron_router
 from nusa.api.websocket import router as websocket_router
 
 __all__ = [
@@ -21,5 +24,8 @@ __all__ = [
     "mcp_router",
     "workforce_router",
     "browser_router",
+    "memory_router",
+    "profiles_router",
+    "cron_router",
     "websocket_router",
 ]

@@ -9,6 +9,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { SkillsManagerModal } from './components/SkillsManagerModal';
 import { McpManagerModal } from './components/McpManagerModal';
 import { BrowserSandboxModal } from './components/BrowserSandboxModal';
+import { MemoryAndSchedulerModal } from './components/MemoryAndSchedulerModal';
 
 export const App: React.FC = () => {
   const {
@@ -32,6 +33,7 @@ export const App: React.FC = () => {
   const [showSkills, setShowSkills] = useState(false);
   const [showMcp, setShowMcp] = useState(false);
   const [showBrowser, setShowBrowser] = useState(false);
+  const [showMemory, setShowMemory] = useState(false);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-neutral-950 font-sans text-neutral-100 antialiased">
@@ -49,6 +51,7 @@ export const App: React.FC = () => {
         onOpenSkills={() => setShowSkills(true)}
         onOpenMcp={() => setShowMcp(true)}
         onOpenBrowser={() => setShowBrowser(true)}
+        onOpenMemory={() => setShowMemory(true)}
       />
 
       {/* Main Workspace Area */}
@@ -82,6 +85,11 @@ export const App: React.FC = () => {
       {showSkills && <SkillsManagerModal onClose={() => setShowSkills(false)} />}
       {showMcp && <McpManagerModal onClose={() => setShowMcp(false)} />}
       <BrowserSandboxModal isOpen={showBrowser} onClose={() => setShowBrowser(false)} />
+      <MemoryAndSchedulerModal
+        isOpen={showMemory}
+        onClose={() => setShowMemory(false)}
+        activeProjectId={activeProject?.id}
+      />
     </div>
   );
 };

@@ -124,3 +124,41 @@ CREATE TABLE IF NOT EXISTS subtasks (
     completed_at TIMESTAMP,
     FOREIGN KEY(parent_task_id) REFERENCES tasks(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS profiles (
+    id TEXT PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    default_model TEXT DEFAULT 'openai/gpt-4o',
+    is_active INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cron_jobs (
+    id TEXT PRIMARY KEY,
+    project_id TEXT,
+    profile_id TEXT,
+    title TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    cron_expr TEXT NOT NULL,
+    enabled INTEGER DEFAULT 1,
+    last_run_at TIMESTAMP,
+    next_run_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY(profile_id) REFERENCES profiles(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS cron_runs (
+    id TEXT PRIMARY KEY,
+    job_id TEXT NOT NULL,
+    task_id TEXT,
+    status TEXT NOT NULL,
+    output_summary TEXT,
+    error_message TEXT,
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+    FOREIGN KEY(job_id) REFERENCES cron_jobs(id) ON DELETE CASCADE
+);

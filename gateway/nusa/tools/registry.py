@@ -23,6 +23,12 @@ from nusa.tools.computer import (
     tool_system_keypress,
     tool_system_mouse_click,
 )
+from nusa.tools.memory_tools import (
+    tool_memory_search,
+    tool_memory_store,
+    tool_memory_forget,
+    tool_memory_list,
+)
 from nusa.mcp.manager import mcp_manager
 from nusa.skills.manager import skill_manager
 
@@ -302,6 +308,73 @@ class ToolRegistry:
             },
         )
 
+        self._tools["memory_search"] = ToolDefinition(
+            name="memory_search",
+            description="Search persistent memories and user preferences by keywords.",
+            parameters=[
+                ToolParameter(name="query", type="string", description="Keywords to search for"),
+                ToolParameter(name="limit", type="integer", description="Max results", required=False),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query keywords"},
+                    "limit": {"type": "integer", "description": "Max results to return"},
+                },
+                "required": ["query"],
+            },
+        )
+
+        self._tools["memory_store"] = ToolDefinition(
+            name="memory_store",
+            description="Save key guidelines, preferences, or project facts to persistent memory.",
+            parameters=[
+                ToolParameter(name="key", type="string", description="Identifier key for memory"),
+                ToolParameter(name="value", type="string", description="Content or fact to remember"),
+                ToolParameter(name="scope", type="string", description="'project' or 'global'", required=False),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "key": {"type": "string", "description": "Memory key identifier"},
+                    "value": {"type": "string", "description": "Content of the memory"},
+                    "scope": {"type": "string", "description": "'project' or 'global'"},
+                },
+                "required": ["key", "value"],
+            },
+        )
+
+        self._tools["memory_forget"] = ToolDefinition(
+            name="memory_forget",
+            description="Remove or forget an obsolete memory item.",
+            parameters=[
+                ToolParameter(name="key", type="string", description="Key to delete"),
+                ToolParameter(name="scope", type="string", description="'project' or 'global'", required=False),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "key": {"type": "string", "description": "Key to forget"},
+                    "scope": {"type": "string", "description": "'project' or 'global'"},
+                },
+                "required": ["key"],
+            },
+        )
+
+        self._tools["memory_list"] = ToolDefinition(
+            name="memory_list",
+            description="List stored memories.",
+            parameters=[
+                ToolParameter(name="scope", type="string", description="'project' or 'global'", required=False),
+            ],
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "scope": {"type": "string", "description": "'project' or 'global'"},
+                },
+            },
+        )
+
     def get_tool_definitions(self) -> list[ToolDefinition]:
         return list(self._tools.values())
 
@@ -391,6 +464,19 @@ class ToolRegistry:
                 int(arguments["y"]),
                 arguments.get("button", "left"),
             )
+        elif tool_name == "memory_search":
+            return await tool_memory_search(workspace_root, arguments["query"], int(arguments.get("limit", 5)))
+        elif tool_name == "memory_store":
+            return await tool_memory_store(
+                workspace_root,
+                arguments["key"],
+                arguments["value"],
+                arguments.get("scope", "project"),
+            )
+        elif tool_name == "memory_forget":
+            return await tool_memory_forget(workspace_root, arguments["key"], arguments.get("scope", "project"))
+        elif tool_name == "memory_list":
+            return await tool_memory_list(workspace_root, arguments.get("scope"))
 
         return {"success": False, "error": f"Unhandled tool '{tool_name}'"}
 
