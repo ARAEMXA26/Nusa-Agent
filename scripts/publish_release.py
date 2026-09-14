@@ -12,7 +12,14 @@ import subprocess
 import urllib.request
 import urllib.parse
 import urllib.error
+import ssl
 from pathlib import Path
+
+# Allow HTTPS requests on environments without pre-installed CA certificates bundle
+try:
+    ssl._create_default_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
 
 REPO = "ARAEMXA26/Nusa-Agent"
 TAG = "v0.1.0"
@@ -150,8 +157,9 @@ Official desktop release of **Nusa Agent**, the local-first autonomous AI agent 
         filename = file_path.name
         file_size = file_path.stat().st_size
         
-        # If asset exists and has exact same size, skip re-uploading to save time
-        if filename in existing_assets and existing_assets[filename][1] == file_size and filename != "checksums.txt":
+        # If asset exists and has exact same size, skip re-uploading to save time (except for DMG, blockmaps, yml, and checksums)
+        always_reupload = filename.endswith(".dmg") or filename.endswith(".blockmap") or filename == "checksums.txt" or filename.endswith(".yml")
+        if not always_reupload and filename in existing_assets and existing_assets[filename][1] == file_size:
             print(f"[OK] Asset {filename} already exists with identical size ({file_size / 1024 / 1024:.1f} MB), skipping.")
             continue
 

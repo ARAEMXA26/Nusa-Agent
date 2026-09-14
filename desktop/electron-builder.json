@@ -47,6 +47,8 @@
     "artifactName": "Nusa-Agent-${version}-mac-${arch}.${ext}"
   },
   "dmg": {
+    "icon": null,
+    "backgroundColor": "#ffffff",
     "contents": [
       {
         "x": 130,
