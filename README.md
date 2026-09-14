@@ -52,6 +52,12 @@ Nusa Agent adalah aplikasi desktop AI agent multi-platform (macOS, Windows, Linu
   - **Scoped Profiles & Cross-Profile Soft Guard**: Profil terisolasi (`default`, `researcher`, `security-auditor`, dll.) dengan folder skill dan memori terpisah. Soft guard mencegah mutasi silang antar-profil tanpa persetujuan eksplisit.
   - **Background Cron Task Scheduler**: Penjadwalan tugas agentik otonom berbasis sintaks cron standar (`@hourly`, `@daily`, `*/30 * * * *`, `interval:60`) dengan riwayat eksekusi lengkap (`cron_runs`).
   - **Memory & Scheduler Desktop UI**: Modal tabulasi terpadu di Desktop Shell untuk mengelola memori proyek/global, berpindah profil aktif, dan mengatur jadwal eksekusi tugas background.
+- **Plugin Marketplace, Signing & Static Scanner (Phase 6)**:
+  - **Standard Plugin Architecture**: Struktur standar ekstensi `plugin.json`, penentuan permission/scopes (`shell`, `network`, `fs_read`, `fs_write`, `browser`), dan dynamic tool/skill loading ke runtime Nusa.
+  - **Cryptographic Signing & Integrity**: Tanda tangan digital asimetris Ed25519 dan hash deterministik direktori SHA-256 untuk memvalidasi integritas paket serta mencegah *tampering* atau manipulasi kode pihak ketiga.
+  - **Deep AST Static Security Scanner**: Parser Abstract Syntax Tree (AST) Python yang memindai kode sebelum instalasi. Otomatis memblokir eksekusi berbahaya (`eval`, `exec`), shell mentah (`os.system`, `subprocess(shell=True)`), soket jaringan tanpa izin, dan kebocoran kredensial rahasia (`~/.ssh`, `.aws`, `.env`).
+  - **Curated Marketplace Catalog**: Katalog plugin bawaan (`Docker Ops`, `Git Assistant`, `SQLite WAL Analyzer`, `DOM Markdown Scraper`) lengkap dengan rating bintang dan audit hak akses.
+  - **Desktop Plugin Marketplace & Auditor Modal**: Antarmuka visual desktop untuk eksplorasi katalog, instalasi terverifikasi, toggle aktivasi, dan audit keamanan direktori plugin secara on-demand.
 
 ---
 
@@ -149,8 +155,8 @@ python verify_live.py
 | **Phase 3** | Multi-Agent Workforce, Parallel Task Graph, Git Worktree Isolation | **SELESAI** |
 | **Phase 4** | Browser Sandbox (Playwright DOM-first) & Scoped Computer-Use | **SELESAI** |
 | **Phase 5** | Long-Term Memory, Scoped Profiles, Cron Scheduler | **SELESAI** |
-| **Phase 6** | Plugin Marketplace, Signing & Static Scanner | *Milestone Berikutnya* |
-| **Phase 7** | Multi-Platform Packaging (macOS dmg, Windows exe, Linux AppImage) & Auto-update | Terjadwal |
+| **Phase 6** | Plugin Marketplace, Signing & Static Scanner | **SELESAI** |
+| **Phase 7** | Multi-Platform Packaging (macOS dmg, Windows exe, Linux AppImage) & Auto-update | *Milestone Berikutnya* |
 
 ---
 

@@ -11,7 +11,8 @@ import {
   Sparkles,
   Network,
   Globe,
-  Brain
+  Brain,
+  Package
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,6 +29,7 @@ interface SidebarProps {
   onOpenMcp: () => void;
   onOpenBrowser: () => void;
   onOpenMemory: () => void;
+  onOpenPlugins: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -44,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenMcp,
   onOpenBrowser,
   onOpenMemory,
+  onOpenPlugins,
 }) => {
   const { t, language, setLanguage } = useI18n();
   const [showNewProjModal, setShowNewProjModal] = useState(false);
@@ -190,6 +193,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Brain className="w-3.5 h-3.5 text-purple-400 shrink-0" />
             <span className="truncate text-[11px]">Memory</span>
+          </button>
+
+          <button
+            onClick={onOpenPlugins}
+            className="col-span-2 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 hover:text-emerald-200 border border-emerald-800/50 transition-colors text-emerald-300"
+            title="Plugin Marketplace & AST Security Auditor"
+          >
+            <Package className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate text-[11px] font-medium">Plugins Marketplace</span>
           </button>
         </div>
 

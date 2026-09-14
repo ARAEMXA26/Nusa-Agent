@@ -12,6 +12,7 @@ from nusa.api.routes_browser import router as browser_router
 from nusa.api.routes_memory import router as memory_router
 from nusa.api.routes_profiles import router as profiles_router
 from nusa.api.routes_cron import router as cron_router
+from nusa.api.routes_plugins import router as plugins_router
 from nusa.api.websocket import router as websocket_router
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     "memory_router",
     "profiles_router",
     "cron_router",
+    "plugins_router",
     "websocket_router",
 ]

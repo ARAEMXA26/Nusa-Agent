@@ -52,6 +52,14 @@ class ToolRegistry:
         self._tools: dict[str, ToolDefinition] = {}
         self._register_default_tools()
 
+    def register_tool(self, tool: ToolDefinition) -> None:
+        """Dynamically register a tool definition."""
+        self._tools[tool.name] = tool
+
+    def unregister_tool(self, name: str) -> None:
+        """Unregister a tool definition."""
+        self._tools.pop(name, None)
+
     def _register_default_tools(self) -> None:
         self._tools["file_read"] = ToolDefinition(
             name="file_read",

@@ -10,6 +10,7 @@ import { SkillsManagerModal } from './components/SkillsManagerModal';
 import { McpManagerModal } from './components/McpManagerModal';
 import { BrowserSandboxModal } from './components/BrowserSandboxModal';
 import { MemoryAndSchedulerModal } from './components/MemoryAndSchedulerModal';
+import { PluginMarketplaceModal } from './components/PluginMarketplaceModal';
 
 export const App: React.FC = () => {
   const {
@@ -34,6 +35,7 @@ export const App: React.FC = () => {
   const [showMcp, setShowMcp] = useState(false);
   const [showBrowser, setShowBrowser] = useState(false);
   const [showMemory, setShowMemory] = useState(false);
+  const [showPlugins, setShowPlugins] = useState(false);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-neutral-950 font-sans text-neutral-100 antialiased">
@@ -52,6 +54,7 @@ export const App: React.FC = () => {
         onOpenMcp={() => setShowMcp(true)}
         onOpenBrowser={() => setShowBrowser(true)}
         onOpenMemory={() => setShowMemory(true)}
+        onOpenPlugins={() => setShowPlugins(true)}
       />
 
       {/* Main Workspace Area */}
@@ -89,6 +92,10 @@ export const App: React.FC = () => {
         isOpen={showMemory}
         onClose={() => setShowMemory(false)}
         activeProjectId={activeProject?.id}
+      />
+      <PluginMarketplaceModal
+        isOpen={showPlugins}
+        onClose={() => setShowPlugins(false)}
       />
     </div>
   );

@@ -18,6 +18,7 @@ from nusa.api import (
     memory_router,
     profiles_router,
     cron_router,
+    plugins_router,
     websocket_router,
 )
 from nusa.browser.manager import browser_manager
@@ -65,6 +66,7 @@ app.include_router(browser_router)
 app.include_router(memory_router)
 app.include_router(profiles_router)
 app.include_router(cron_router)
+app.include_router(plugins_router)
 app.include_router(websocket_router)
 
 

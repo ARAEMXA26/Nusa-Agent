@@ -162,3 +162,19 @@ CREATE TABLE IF NOT EXISTS cron_runs (
     completed_at TIMESTAMP,
     FOREIGN KEY(job_id) REFERENCES cron_jobs(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS plugins (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    version TEXT NOT NULL,
+    author TEXT,
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'installed',
+    verification_status TEXT NOT NULL DEFAULT 'untrusted',
+    signature TEXT,
+    checksum TEXT,
+    permissions TEXT,
+    installed_path TEXT,
+    installed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

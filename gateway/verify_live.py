@@ -268,6 +268,92 @@ async def run_live_verification():
             print("[OK] All 4 Memory Tools verified in ToolRegistry.")
             print("[SUCCESS] All Phase 5 (Memory, Scoped Profiles, Cron) verified on live server!")
 
+            # 12. Phase 6 Verification: Plugins Marketplace, Signing & Static Scanner
+            print("\n--- Verifying Phase 6: Plugin Marketplace, Signing & AST Scanner ---")
+            
+            # Marketplace catalog
+            mkt_req = urllib.request.Request(f"{BASE_URL}/api/plugins/marketplace")
+            with urllib.request.urlopen(mkt_req) as resp:
+                mkt_data = json.loads(resp.read().decode())
+                catalog = mkt_data.get("catalog", [])
+                assert len(catalog) >= 3
+            print(f"[OK] Marketplace Catalog verified: {len(catalog)} plugins listed.")
+
+            # Prepare a temporary signed plugin package
+            from nusa.plugins.crypto import generate_signing_keypair, sign_data, calculate_directory_hash
+            live_plugin_dir = workspace / "live_sample_plugin"
+            live_plugin_dir.mkdir(exist_ok=True)
+            (live_plugin_dir / "main.py").write_text("def ping(): return 'pong'", encoding="utf-8")
+
+            # On-demand AST Security Scanner
+            scan_req = urllib.request.Request(
+                f"{BASE_URL}/api/plugins/scan",
+                data=json.dumps({"directory_path": str(live_plugin_dir)}).encode(),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(scan_req) as resp:
+                scan_res = json.loads(resp.read().decode())
+                assert scan_res["report"]["is_safe"] is True
+            print("[OK] Deep AST Static Security Scanner verified on plugin directory.")
+
+            # Cryptographic Signing
+            priv_hex, pub_hex = generate_signing_keypair()
+            chksum = calculate_directory_hash(live_plugin_dir)
+            sig_hex = sign_data(priv_hex, chksum.encode("utf-8"))
+
+            manifest_content = {
+                "id": "live-e2e-plugin",
+                "name": "Live E2E Verified Plugin",
+                "version": "1.0.0",
+                "author": "Nusa Verification Suite",
+                "description": "Live tested cryptographic plugin",
+                "permissions": ["network"],
+                "checksum": chksum,
+                "signature": sig_hex,
+                "tools": [
+                    {
+                        "name": "plugin_live_echo",
+                        "description": "Echo tool from live plugin",
+                        "parameters": {"type": "object", "properties": {}}
+                    }
+                ]
+            }
+            (live_plugin_dir / "plugin.json").write_text(json.dumps(manifest_content), encoding="utf-8")
+
+            # Install plugin
+            inst_req = urllib.request.Request(
+                f"{BASE_URL}/api/plugins/install",
+                data=json.dumps({
+                    "source_dir": str(live_plugin_dir),
+                    "public_key_hex": pub_hex,
+                    "force_untrusted": False
+                }).encode(),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(inst_req) as resp:
+                inst_res = json.loads(resp.read().decode())
+                assert inst_res["plugin"]["id"] == "live-e2e-plugin"
+                assert inst_res["plugin"]["verification_status"] == "verified"
+            print("[OK] Plugin cryptographically verified and installed with Ed25519 signature.")
+
+            # Toggle plugin
+            tgl_req = urllib.request.Request(
+                f"{BASE_URL}/api/plugins/live-e2e-plugin/toggle",
+                data=json.dumps({"enabled": False}).encode(),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(tgl_req) as resp:
+                tgl_res = json.loads(resp.read().decode())
+                assert tgl_res["plugin"]["status"] == "disabled"
+            print("[OK] Plugin toggle status verified.")
+
+            # Uninstall plugin
+            del_plug_req = urllib.request.Request(f"{BASE_URL}/api/plugins/live-e2e-plugin", method="DELETE")
+            with urllib.request.urlopen(del_plug_req) as resp:
+                assert resp.status == 200
+            print("[OK] Plugin uninstalled and cleaned up successfully.")
+            print("[SUCCESS] All Phase 6 (Marketplace, Signing, AST Scanner) verified on live server!")
+
 
 if __name__ == "__main__":
     asyncio.run(run_live_verification())
