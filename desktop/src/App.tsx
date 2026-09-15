@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useGateway } from './hooks/useGateway';
 import { TopBar } from './components/TopBar';
 import { Sidebar } from './components/Sidebar';
 import { ApprovalsInbox } from './components/ApprovalsInbox';
 import { TaskTimeline } from './components/TaskTimeline';
-import { ArtifactPanel } from './components/ArtifactPanel';
+import { ArtifactPanel, ArtifactsPanelState } from './components/ArtifactPanel';
 import { SettingsModal } from './components/SettingsModal';
 import { SkillsManagerModal } from './components/SkillsManagerModal';
 import { McpManagerModal } from './components/McpManagerModal';
@@ -43,6 +43,23 @@ export const App: React.FC = () => {
   const [showPlugins, setShowPlugins] = useState(false);
   const [showExtensions, setShowExtensions] = useState(false);
   const [updateAvailableInfo, setUpdateAvailableInfo] = useState<any>(null);
+
+  // Tri-state panel state: 'docked' | 'expanded' | 'closed'
+  const [artifactsPanelState, setArtifactsPanelState] = useState<ArtifactsPanelState>('docked');
+  const [lastDockedWidth, setLastDockedWidth] = useState<number>(480);
+  const reopenButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Global shortcut to toggle Artifacts panel (Cmd+Option+A / Ctrl+Option+A)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.altKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        setArtifactsPanelState((prev) => (prev === 'closed' ? 'docked' : 'closed'));
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   useEffect(() => {
     if ((window as any).nusa?.onUpdateAvailable) {
@@ -89,6 +106,8 @@ export const App: React.FC = () => {
         isSandboxed={true}
         tokenCount="12.4K tokens"
         cost="$0.03"
+        isArtifactsClosed={artifactsPanelState === 'closed'}
+        onOpenArtifacts={() => setArtifactsPanelState('docked')}
       />
 
       {/* Main 3-Column Layout: Left Sidebar, Center Mission & Editor, Right Website Preview & Artifacts */}
@@ -149,12 +168,22 @@ export const App: React.FC = () => {
               onCancel={() => activeTask && cancelTask(activeTask.id)}
               onCreateTask={(goal) => activeProject && createTask(activeProject.id, goal)}
               onBackToDashboard={handleSelectDashboard}
+              isArtifactsClosed={artifactsPanelState === 'closed'}
+              onOpenArtifacts={() => setArtifactsPanelState('docked')}
+              reopenButtonRef={reopenButtonRef}
             />
           </main>
         )}
 
         {/* Right Section: Artifacts & Live Website Preview matching Gambar 1 */}
-        <ArtifactPanel artifacts={artifacts} />
+        <ArtifactPanel
+          artifacts={artifacts}
+          panelState={artifactsPanelState}
+          onPanelStateChange={setArtifactsPanelState}
+          lastDockedWidth={lastDockedWidth}
+          onDockedWidthChange={setLastDockedWidth}
+          reopenButtonRef={reopenButtonRef}
+        />
       </div>
 
       {/* Extensions Marketplace Modal matching Gambar 2 */}

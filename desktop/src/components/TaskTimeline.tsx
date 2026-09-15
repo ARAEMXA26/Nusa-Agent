@@ -17,7 +17,8 @@ import {
   FileText, 
   Sparkles, 
   Layers, 
-  ChevronDown 
+  ChevronDown,
+  FileCheck2 
 } from 'lucide-react';
 
 interface TaskTimelineProps {
@@ -26,6 +27,9 @@ interface TaskTimelineProps {
   onCancel: () => void;
   onCreateTask: (goal: string) => void;
   onBackToDashboard?: () => void;
+  isArtifactsClosed?: boolean;
+  onOpenArtifacts?: () => void;
+  reopenButtonRef?: React.RefObject<HTMLButtonElement>;
 }
 
 export const TaskTimeline: React.FC<TaskTimelineProps> = ({
@@ -34,6 +38,9 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
   onCancel: _onCancel,
   onCreateTask: _onCreateTask,
   onBackToDashboard,
+  isArtifactsClosed = false,
+  onOpenArtifacts,
+  reopenButtonRef,
 }) => {
   const [activeTab, setActiveTab] = useState<'conversation' | 'antigravity' | 'plan' | 'agents' | 'resources'>('conversation');
   const [messageInput, setMessageInput] = useState('');
@@ -90,19 +97,35 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
     <div className="flex-1 flex flex-col h-full bg-[#0E1013] text-neutral-200 select-none min-w-0 overflow-hidden">
       {/* Center Top Header matching Gambar 1 */}
       <div className="p-5 pb-3 border-b border-neutral-800/80 bg-[#111317]">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center gap-1.5 text-xs text-neutral-400 mb-2">
-          <button
-            onClick={onBackToDashboard}
-            className="flex items-center gap-1 hover:text-white transition-colors"
-          >
-            <ChevronLeft className="w-3.5 h-3.5 stroke-white" />
-            <span>Tasks</span>
-          </button>
-          <span>&gt;</span>
-          <span className="text-neutral-200 font-medium truncate">
-            {activeTask?.title || 'Build Analytics Dashboard'}
-          </span>
+        {/* Navigation Breadcrumb & Optional Open Artifacts Button */}
+        <div className="flex items-center justify-between text-xs text-neutral-400 mb-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <button
+              onClick={onBackToDashboard}
+              className="flex items-center gap-1 hover:text-white transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 stroke-white" />
+              <span>Tasks</span>
+            </button>
+            <span>&gt;</span>
+            <span className="text-neutral-200 font-medium truncate">
+              {activeTask?.title || 'Build Analytics Dashboard'}
+            </span>
+          </div>
+
+          {isArtifactsClosed && onOpenArtifacts && (
+            <button
+              ref={reopenButtonRef}
+              onClick={onOpenArtifacts}
+              title="Buka panel Artifacts (Cmd+Option+A)"
+              aria-label="Buka panel Artifacts"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-white border border-blue-500/40 text-[11px] font-semibold transition-all shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <FileCheck2 className="w-3.5 h-3.5 stroke-white" />
+              <span>Buka Artifacts</span>
+              <kbd className="text-[9px] bg-blue-950/80 px-1 rounded text-blue-300 ml-1">⌘⌥A</kbd>
+            </button>
+          )}
         </div>
 
         {/* Big Mission Title & Progress Metric Ring */}

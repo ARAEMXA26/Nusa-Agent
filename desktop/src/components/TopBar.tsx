@@ -2,7 +2,8 @@ import React from 'react';
 import { 
   ChevronDown, 
   ShieldCheck, 
-  BarChart2 
+  BarChart2,
+  PanelRightOpen 
 } from 'lucide-react';
 
 interface TopBarProps {
@@ -11,6 +12,8 @@ interface TopBarProps {
   isSandboxed?: boolean;
   tokenCount?: string;
   cost?: string;
+  isArtifactsClosed?: boolean;
+  onOpenArtifacts?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -19,6 +22,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   isSandboxed = true,
   tokenCount = '12.4K tokens',
   cost = '$0.03',
+  isArtifactsClosed = false,
+  onOpenArtifacts,
 }) => {
   return (
     <header 
@@ -64,6 +69,19 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span>{cost}</span>
           <BarChart2 className="w-3.5 h-3.5 stroke-white" />
         </div>
+
+        {/* Reopen Artifacts Button if Closed */}
+        {isArtifactsClosed && onOpenArtifacts && (
+          <button
+            onClick={onOpenArtifacts}
+            title="Buka panel Artifacts (Cmd+Option+A)"
+            aria-label="Buka panel Artifacts"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-neutral-800/90 hover:bg-neutral-700 text-neutral-200 hover:text-white border border-neutral-700/60 font-medium text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            <PanelRightOpen className="w-3.5 h-3.5 stroke-white" />
+            <span>Artifacts</span>
+          </button>
+        )}
       </div>
     </header>
   );
