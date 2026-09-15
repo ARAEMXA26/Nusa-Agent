@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "memory-curator",
+  "name": "Memory Curator",
+  "version": "1.0.0",
+  "description": "Memilih fakta yang layak disimpan, memperbarui memori, menghapus duplikasi, dan menghormati privasi.",
+  "tags": [
+    "memory",
+    "context",
+    "personalization"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "memory_read",
+    "memory_write",
+    "memory_delete"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "read",
+    "network": "none",
+    "shell": "none",
+    "computerControl": "none"
+  },
+  "riskLevel": "high",
+  "requiresApprovalFor": [
+    "save_sensitive_memory",
+    "delete_memory"
+  ],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

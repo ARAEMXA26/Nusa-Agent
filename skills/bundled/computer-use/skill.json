@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "computer-use",
+  "name": "Computer Use",
+  "version": "1.0.0",
+  "description": "Mengamati dan mengoperasikan aplikasi desktop ketika API atau tool khusus tidak tersedia.",
+  "tags": [
+    "desktop",
+    "gui",
+    "automation"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "screen_view",
+    "mouse_control",
+    "keyboard_control"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "read",
+    "network": "none",
+    "shell": "none",
+    "computerControl": "interact-with-approval"
+  },
+  "riskLevel": "critical",
+  "requiresApprovalFor": [
+    "state_modifying_action",
+    "desktop_interaction",
+    "system_input"
+  ],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

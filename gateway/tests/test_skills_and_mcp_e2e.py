@@ -43,7 +43,7 @@ async def test_skills_and_mcp_execution():
             {"skill_name": "code-reviewer"},
         )
         assert skill_res["success"] is True
-        assert "Code Reviewer Skill" in skill_res["instructions"]
+        assert "Code Reviewer" in skill_res["instructions"]
 
         # Test 2: Deferred MCP Tool Search via Tool Registry
         search_res = await tool_registry.execute_tool(

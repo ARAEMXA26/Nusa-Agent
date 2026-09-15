@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "media-creation",
+  "name": "Media Creation",
+  "version": "1.0.0",
+  "description": "Membuat atau mengedit aset gambar, audio, dan video melalui provider yang tersedia.",
+  "tags": [
+    "image",
+    "audio",
+    "video",
+    "creative"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "image_generate",
+    "image_edit"
+  ],
+  "optionalTools": [
+    "audio_generate",
+    "video_generate"
+  ],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "workspace-write",
+    "network": "restricted",
+    "shell": "none",
+    "computerControl": "none"
+  },
+  "riskLevel": "medium",
+  "requiresApprovalFor": [
+    "paid_provider_usage_over_budget"
+  ],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

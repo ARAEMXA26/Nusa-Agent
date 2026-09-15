@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "code-reviewer",
+  "name": "Code Reviewer",
+  "version": "1.0.0",
+  "description": "Meninjau diff untuk bug, regresi, kerentanan, dan masalah maintainability.",
+  "tags": [
+    "review",
+    "security",
+    "quality"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "file_read",
+    "file_list",
+    "file_search",
+    "git_status",
+    "git_diff"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "read",
+    "network": "none",
+    "shell": "none",
+    "computerControl": "none"
+  },
+  "riskLevel": "low",
+  "requiresApprovalFor": [],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "browser-automation",
+  "name": "Browser Automation",
+  "version": "1.0.0",
+  "description": "Membuka halaman, berinteraksi dengan DOM, mengisi form, mengambil screenshot, dan memverifikasi web app.",
+  "tags": [
+    "browser",
+    "automation",
+    "e2e"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "browser_open",
+    "browser_inspect",
+    "browser_click",
+    "browser_type",
+    "browser_screenshot"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "workspace-write",
+    "network": "unrestricted",
+    "shell": "none",
+    "computerControl": "none"
+  },
+  "riskLevel": "high",
+  "requiresApprovalFor": [
+    "form_submit",
+    "financial_transaction",
+    "account_login",
+    "publish_action"
+  ],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

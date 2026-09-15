@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "task-planning",
+  "name": "Task Planning",
+  "version": "1.0.0",
+  "description": "Memecah tujuan kompleks menjadi langkah, dependency, milestone, dan kriteria selesai.",
+  "tags": [
+    "planning",
+    "tasks",
+    "workflow"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "workspace_read",
+    "memory_read"
+  ],
+  "optionalTools": [
+    "task_state_write"
+  ],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "read",
+    "network": "none",
+    "shell": "none",
+    "computerControl": "none"
+  },
+  "riskLevel": "low",
+  "requiresApprovalFor": [],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

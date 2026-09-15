@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "software-development",
+  "name": "Software Development",
+  "version": "1.0.0",
+  "description": "Membaca, menambah, mengedit, menghapus, mencari, dan memverifikasi source code.",
+  "tags": [
+    "coding",
+    "files",
+    "implementation"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "file_read",
+    "file_list",
+    "file_search",
+    "symbol_search",
+    "file_write",
+    "file_patch",
+    "run_command"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "workspace-write",
+    "network": "none",
+    "shell": "sandboxed",
+    "computerControl": "none"
+  },
+  "riskLevel": "high",
+  "requiresApprovalFor": [
+    "delete_file",
+    "write_outside_workspace",
+    "destructive_command"
+  ],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

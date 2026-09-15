@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "web-research",
+  "name": "Web Research",
+  "version": "1.0.0",
+  "description": "Mencari sumber web, membandingkan bukti, dan menghasilkan jawaban bersitasi.",
+  "tags": [
+    "research",
+    "web",
+    "citations"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "web_search",
+    "web_open",
+    "web_find"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "read",
+    "network": "restricted",
+    "shell": "none",
+    "computerControl": "none"
+  },
+  "riskLevel": "medium",
+  "requiresApprovalFor": [],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

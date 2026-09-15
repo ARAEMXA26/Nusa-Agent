@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "spreadsheet",
+  "name": "Spreadsheet Analyst",
+  "version": "1.0.0",
+  "description": "Membuat dan menganalisis workbook, formula, tabel, chart, serta validasi kalkulasi.",
+  "tags": [
+    "spreadsheet",
+    "xlsx",
+    "data"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "spreadsheet_read",
+    "spreadsheet_write",
+    "spreadsheet_recalculate",
+    "spreadsheet_render"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "workspace-write",
+    "network": "none",
+    "shell": "none",
+    "computerControl": "none"
+  },
+  "riskLevel": "medium",
+  "requiresApprovalFor": [],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

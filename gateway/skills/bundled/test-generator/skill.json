@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "test-generator",
+  "name": "Test Generator",
+  "version": "1.0.0",
+  "description": "Membuat test case relevan dan menjalankan verifikasi dengan test runner nyata.",
+  "tags": [
+    "testing",
+    "verification",
+    "tdd"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "file_read",
+    "file_search",
+    "file_write",
+    "file_patch",
+    "run_test"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "workspace-write",
+    "network": "none",
+    "shell": "sandboxed",
+    "computerControl": "none"
+  },
+  "riskLevel": "medium",
+  "requiresApprovalFor": [],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

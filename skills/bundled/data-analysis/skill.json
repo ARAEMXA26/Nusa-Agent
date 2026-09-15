@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "data-analysis",
+  "name": "Data Analysis",
+  "version": "1.0.0",
+  "description": "Membersihkan, menganalisis, memvisualisasikan, dan memvalidasi dataset secara reproducible.",
+  "tags": [
+    "analysis",
+    "statistics",
+    "visualization"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "file_read",
+    "data_query",
+    "python_sandbox",
+    "chart_render"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "workspace-write",
+    "network": "none",
+    "shell": "sandboxed",
+    "computerControl": "none"
+  },
+  "riskLevel": "medium",
+  "requiresApprovalFor": [],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "git-workflow",
+  "name": "Git Workflow",
+  "version": "1.0.0",
+  "description": "Membaca status dan diff, membuat commit semantik, serta menyiapkan branch atau pull request secara aman.",
+  "tags": [
+    "git",
+    "workflow",
+    "versioning"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "git_status",
+    "git_diff",
+    "git_log",
+    "git_add",
+    "git_commit"
+  ],
+  "optionalTools": [
+    "git_branch",
+    "git_push",
+    "pull_request_create"
+  ],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "workspace-write",
+    "network": "restricted",
+    "shell": "sandboxed",
+    "computerControl": "none"
+  },
+  "riskLevel": "high",
+  "requiresApprovalFor": [
+    "git_push",
+    "force_operation",
+    "branch_deletion",
+    "pull_request_create"
+  ],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

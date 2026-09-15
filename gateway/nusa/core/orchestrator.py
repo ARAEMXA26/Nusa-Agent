@@ -103,6 +103,10 @@ class TaskOrchestrator:
         if task_coro and not task_coro.done():
             task_coro.cancel()
 
+        current_state = self.get_state(task_id)
+        if current_state in (TaskState.COMPLETED, TaskState.FAILED, TaskState.CANCELLED):
+            return
+
         self._set_state(task_id, TaskState.CANCELLED)
         log_audit_event(
             actor="user",
@@ -155,12 +159,12 @@ class TaskOrchestrator:
         skills_summary = skill_manager.get_progressive_summary(workspace_root)
         if skills_summary:
             skills_text = "\n".join(
-                f"- {s['name']}: {s['description']} (allowed tools: {s['allowed_tools']})"
+                f"- {s['name']} (${s['id']}): {s['description']} (allowed tools: {', '.join(s['tools'])})"
                 for s in skills_summary
             )
             system_prompt += (
                 f"\n\nAvailable Skills (Progressive Catalog):\n{skills_text}\n"
-                "To activate any skill and receive full detailed instructions, invoke tool 'skill_activate' with {'skill_name': '<name>'}.\n"
+                "To activate any skill and receive full detailed instructions, invoke tool 'skill_activate' with {'skill_name': '<id>'}.\n"
                 "To search external MCP tools on demand, invoke tool 'tool_search_mcp' with {'query': '<capability>'}.\n"
             )
 
@@ -168,6 +172,30 @@ class TaskOrchestrator:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Goal: {goal}"},
         ]
+
+        # Automatic and explicit skill routing
+        routed_skills = skill_manager.route_skills(goal, workspace_root)
+        for r_skill in routed_skills:
+            instructions = skill_manager.activate_skill(
+                r_skill.id,
+                task_id=task_id,
+                reason="Router match on goal intent or explicit $skill mention",
+                model=default_model,
+            )
+            if instructions:
+                messages.append({
+                    "role": "system",
+                    "content": instructions,
+                })
+                await event_bus.emit(
+                    "skill.activated",
+                    task_id=task_id,
+                    payload={
+                        "skill_id": r_skill.id,
+                        "skill_name": r_skill.name,
+                        "version": r_skill.version,
+                    },
+                )
 
         # Record initial goal message in DB
         with get_db() as db:
@@ -230,12 +258,22 @@ class TaskOrchestrator:
                     tc_name = tc.name
                     tc_args = tc.arguments
 
-                    # Evaluate policy
-                    policy_eval = policy_engine.evaluate(tc_name, tc_args)
+                    # Evaluate policy under active skill least-privilege boundary
+                    active_skill = skill_manager.get_active_skill_for_task(task_id)
+                    policy_eval = policy_engine.evaluate(tc_name, tc_args, active_skill=active_skill)
 
                     # 1. DENY
                     if policy_eval.decision == PolicyDecision.DENY:
                         err_msg = f"Security Policy Violation (DENY): {policy_eval.reason}"
+                        skill_manager.record_tool_call(
+                            task_id=task_id,
+                            tool_name=tc_name,
+                            decision="deny",
+                            permitted=False,
+                            arguments=tc_args,
+                            result={"error": err_msg},
+                            duration_ms=0,
+                        )
                         with get_db() as db:
                             db.execute(
                                 """
@@ -274,7 +312,7 @@ class TaskOrchestrator:
                                     policy_eval.action_type,
                                     policy_eval.reason,
                                     policy_eval.preview,
-                                ),
+                                    ),
                             )
 
                         self._set_state(task_id, TaskState.AWAITING_APPROVAL)
@@ -300,6 +338,22 @@ class TaskOrchestrator:
                             # Rejected by user
                             self._set_state(task_id, TaskState.EXECUTING)
                             rejection_msg = "Action was rejected by the user."
+                            skill_manager.record_approval(
+                                task_id=task_id,
+                                tool_name=tc_name,
+                                action_type=policy_eval.action_type,
+                                reason=policy_eval.reason,
+                                status="rejected",
+                            )
+                            skill_manager.record_tool_call(
+                                task_id=task_id,
+                                tool_name=tc_name,
+                                decision="ask_rejected",
+                                permitted=False,
+                                arguments=tc_args,
+                                result={"error": rejection_msg},
+                                duration_ms=0,
+                            )
                             with get_db() as db:
                                 db.execute(
                                     "UPDATE tool_calls SET status = 'rejected', result_json = ? WHERE id = ?",
@@ -314,6 +368,13 @@ class TaskOrchestrator:
 
                         # Approved! Resume execution
                         self._set_state(task_id, TaskState.EXECUTING)
+                        skill_manager.record_approval(
+                            task_id=task_id,
+                            tool_name=tc_name,
+                            action_type=policy_eval.action_type,
+                            reason=policy_eval.reason,
+                            status="approved",
+                        )
 
                     # 3. ALLOW or Approved ASK -> Run real tool!
                     start_t = time.time()
@@ -323,8 +384,20 @@ class TaskOrchestrator:
                         payload={"tool_name": tc_name, "arguments": tc_args},
                     )
 
-                    tool_res = await tool_registry.execute_tool(workspace_root, tc_name, tc_args)
+                    tool_res = await tool_registry.execute_tool(
+                        workspace_root, tc_name, tc_args, task_id=task_id
+                    )
                     duration_ms = int((time.time() - start_t) * 1000)
+
+                    skill_manager.record_tool_call(
+                        task_id=task_id,
+                        tool_name=tc_name,
+                        decision="allow" if policy_eval.decision == PolicyDecision.ALLOW else "ask_approved",
+                        permitted=True,
+                        arguments=tc_args,
+                        result=tool_res,
+                        duration_ms=duration_ms,
+                    )
 
                     # Update tool call record
                     with get_db() as db:
@@ -405,6 +478,7 @@ class TaskOrchestrator:
             )
         finally:
             self._running_tasks.pop(task_id, None)
+            skill_manager.deactivate_skill(task_id)
 
 
 orchestrator = TaskOrchestrator()

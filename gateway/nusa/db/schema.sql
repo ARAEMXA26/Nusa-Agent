@@ -178,3 +178,107 @@ CREATE TABLE IF NOT EXISTS plugins (
     installed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ========================================================
+-- Skills Hub Tables
+-- ========================================================
+
+CREATE TABLE IF NOT EXISTS skills (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    version TEXT NOT NULL,
+    description TEXT NOT NULL,
+    scope TEXT NOT NULL, -- bundled, user, workspace
+    risk_level TEXT NOT NULL, -- low, medium, high, critical
+    path TEXT NOT NULL,
+    manifest_json TEXT NOT NULL,
+    instruction_checksum TEXT NOT NULL,
+    manifest_checksum TEXT NOT NULL,
+    total_checksum TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS skill_versions (
+    id TEXT PRIMARY KEY,
+    skill_id TEXT NOT NULL,
+    version TEXT NOT NULL,
+    checksum TEXT NOT NULL,
+    manifest_json TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(skill_id) REFERENCES skills(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS skill_enablement (
+    id TEXT PRIMARY KEY,
+    skill_id TEXT NOT NULL,
+    project_id TEXT, -- NULL for global/bundled scope, or project_id for workspace scope
+    enabled INTEGER NOT NULL DEFAULT 1,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(skill_id, project_id)
+);
+
+CREATE TABLE IF NOT EXISTS skill_audits (
+    id TEXT PRIMARY KEY,
+    skill_id TEXT NOT NULL,
+    version TEXT NOT NULL,
+    checksum TEXT NOT NULL,
+    status TEXT NOT NULL, -- passed, warning, failed, not_audited, stale
+    findings_json TEXT NOT NULL DEFAULT '[]',
+    risk_score INTEGER NOT NULL DEFAULT 0,
+    audited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(skill_id) REFERENCES skills(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS skill_dependencies (
+    id TEXT PRIMARY KEY,
+    skill_id TEXT NOT NULL,
+    dep_type TEXT NOT NULL, -- command, runtime, plugin, env_var, tool
+    dep_name TEXT NOT NULL,
+    status TEXT NOT NULL, -- available, missing, optional_missing
+    details TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(skill_id) REFERENCES skills(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS skill_runs (
+    id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL,
+    skill_id TEXT NOT NULL,
+    version TEXT NOT NULL,
+    reason TEXT,
+    model TEXT,
+    status TEXT NOT NULL, -- active, completed, failed, cancelled
+    duration_ms INTEGER,
+    error_sanitized TEXT,
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+    FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY(skill_id) REFERENCES skills(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS skill_tool_calls (
+    id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    tool_name TEXT NOT NULL,
+    permitted INTEGER NOT NULL DEFAULT 1,
+    decision TEXT NOT NULL, -- allow, ask, deny
+    arguments_json TEXT,
+    result_json TEXT,
+    duration_ms INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(run_id) REFERENCES skill_runs(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS skill_approvals (
+    id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    tool_name TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending', -- pending, approved, rejected
+    decided_at TIMESTAMP,
+    decided_by TEXT,
+    FOREIGN KEY(run_id) REFERENCES skill_runs(id) ON DELETE CASCADE
+);
+

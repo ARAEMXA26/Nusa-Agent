@@ -62,3 +62,8 @@ class PathJail:
             return True
         except (PathJailError, ValueError):
             return False
+
+
+def safe_path(workspace_root: str | Path, rel_or_abs_path: str | Path) -> Path:
+    return PathJail(workspace_root).resolve_safe(rel_or_abs_path)
+

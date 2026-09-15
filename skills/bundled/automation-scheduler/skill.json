@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "automation-scheduler",
+  "name": "Automation Scheduler",
+  "version": "1.0.0",
+  "description": "Membuat, melihat, mengubah, menjeda, dan menghapus pekerjaan terjadwal.",
+  "tags": [
+    "automation",
+    "schedule",
+    "monitor"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "automation_list",
+    "automation_create",
+    "automation_update",
+    "automation_delete"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "read",
+    "network": "none",
+    "shell": "none",
+    "computerControl": "none"
+  },
+  "riskLevel": "high",
+  "requiresApprovalFor": [
+    "automation_create",
+    "automation_activate",
+    "automation_destructive_update",
+    "automation_delete"
+  ],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

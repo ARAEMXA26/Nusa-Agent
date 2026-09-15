@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "document",
+  "name": "Document Studio",
+  "version": "1.0.0",
+  "description": "Membaca, membuat, mengedit, merender, dan memverifikasi dokumen DOCX.",
+  "tags": [
+    "document",
+    "docx",
+    "writing"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "document_read",
+    "document_write",
+    "document_render",
+    "file_read",
+    "file_write"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "workspace-write",
+    "network": "none",
+    "shell": "none",
+    "computerControl": "none"
+  },
+  "riskLevel": "medium",
+  "requiresApprovalFor": [],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

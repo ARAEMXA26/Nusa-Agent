@@ -1,17 +1,37 @@
 """Skills package for Nusa Agent."""
 
-from nusa.skills.parser import SkillParser, SkillDefinition, SkillMetadata
-from nusa.skills.scanner import SkillSecurityScanner, ScanResult, ScanFinding
-from nusa.skills.manager import skill_manager, SkillManager, SkillItem
+from nusa.skills.models import (
+    AuditStatus,
+    DependencyHealthItem,
+    RiskLevel,
+    ScanFinding,
+    ScanResult,
+    SkillCompatibility,
+    SkillDependencies,
+    SkillDetail,
+    SkillManifest,
+    SkillPermissions,
+    SkillScope,
+)
+from nusa.skills.parser import ParsedSkill, SkillParser
+from nusa.skills.scanner import SkillSecurityScanner
+from nusa.skills.manager import SkillManager, skill_manager
 
 __all__ = [
-    "SkillParser",
-    "SkillDefinition",
-    "SkillMetadata",
-    "SkillSecurityScanner",
-    "ScanResult",
+    "SkillManifest",
+    "SkillScope",
+    "RiskLevel",
+    "AuditStatus",
+    "SkillPermissions",
+    "SkillDependencies",
+    "SkillCompatibility",
     "ScanFinding",
-    "skill_manager",
+    "ScanResult",
+    "DependencyHealthItem",
+    "SkillDetail",
+    "SkillParser",
+    "ParsedSkill",
+    "SkillSecurityScanner",
     "SkillManager",
-    "SkillItem",
+    "skill_manager",
 ]

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "plugin-mcp-manager",
+  "name": "Plugin & MCP Manager",
+  "version": "1.0.0",
+  "description": "Menemukan, memasang, mengonfigurasi, menguji, menonaktifkan, dan menghapus plugin atau MCP server.",
+  "tags": [
+    "plugin",
+    "mcp",
+    "integrations"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "plugin_list",
+    "plugin_inspect",
+    "plugin_install",
+    "plugin_update",
+    "plugin_remove",
+    "mcp_test"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "workspace-write",
+    "network": "restricted",
+    "shell": "sandboxed",
+    "computerControl": "none"
+  },
+  "riskLevel": "critical",
+  "requiresApprovalFor": [
+    "plugin_install",
+    "plugin_update",
+    "plugin_remove",
+    "credential_change",
+    "permission_change"
+  ],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}

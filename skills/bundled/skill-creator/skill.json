@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "skill-creator",
+  "name": "Skill Creator",
+  "version": "1.0.0",
+  "description": "Membuat, memvalidasi, menguji, dan mengemas skill Nusa Agent baru.",
+  "tags": [
+    "skills",
+    "authoring",
+    "extensions"
+  ],
+  "scope": "bundled",
+  "entrypoint": "SKILL.md",
+  "enabledByDefault": true,
+  "tools": [
+    "file_read",
+    "file_write",
+    "file_patch",
+    "skill_validate",
+    "skill_test"
+  ],
+  "optionalTools": [],
+  "dependencies": {
+    "commands": [],
+    "runtimes": [],
+    "plugins": [],
+    "environmentVariables": []
+  },
+  "permissions": {
+    "filesystem": "workspace-write",
+    "network": "none",
+    "shell": "none",
+    "computerControl": "none"
+  },
+  "riskLevel": "high",
+  "requiresApprovalFor": [
+    "install_skill",
+    "publish_skill"
+  ],
+  "compatibility": {
+    "os": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "minAppVersion": "0.1.0"
+  }
+}
