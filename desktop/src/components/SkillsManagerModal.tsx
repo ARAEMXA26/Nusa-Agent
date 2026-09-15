@@ -182,8 +182,48 @@ export const SkillsManagerModal: React.FC<SkillsManagerModalProps> = ({ onClose 
       setLoading(true);
       const res = await fetch('http://127.0.0.1:4141/api/skills');
       if (res.ok) {
-        const data: SkillItem[] = await res.json();
-        setSkills(data);
+        const rawData = await res.json();
+        const list: any[] = Array.isArray(rawData) ? rawData : [];
+        const normalized: SkillItem[] = list.map((s: any) => {
+          const rawAudit = s.audit || s.scan_result || {};
+          const auditStatus: AuditStatus =
+            rawAudit.status ||
+            (rawAudit.passed === false ? 'failed' : rawAudit.passed ? 'passed' : 'not_audited');
+
+          return {
+            id: s.id || s.name || 'unknown-skill',
+            name: s.name || s.id || 'Unknown Skill',
+            version: s.version || '1.0.0',
+            description: s.description || '',
+            tags: Array.isArray(s.tags) ? s.tags : [],
+            scope: (s.scope as SkillScope) || 'bundled',
+            risk_level: (s.risk_level as RiskLevel) || 'low',
+            enabled: Boolean(s.enabled),
+            tools: Array.isArray(s.tools)
+              ? s.tools
+              : Array.isArray(s.allowed_tools)
+              ? s.allowed_tools
+              : [],
+            optional_tools: Array.isArray(s.optional_tools) ? s.optional_tools : [],
+            path: s.path || '',
+            audit: {
+              passed: Boolean(rawAudit.passed ?? true),
+              status: auditStatus,
+              risk_score: typeof rawAudit.risk_score === 'number' ? rawAudit.risk_score : 0,
+              findings: Array.isArray(rawAudit.findings) ? rawAudit.findings : [],
+              audited_at: rawAudit.audited_at,
+              audited_version: rawAudit.audited_version,
+              checksum: rawAudit.checksum,
+            },
+            dependencies_health: Array.isArray(s.dependencies_health) ? s.dependencies_health : [],
+            has_scripts: Boolean(s.has_scripts),
+            has_references: Boolean(s.has_references),
+            has_assets: Boolean(s.has_assets),
+            usage_count: typeof s.usage_count === 'number' ? s.usage_count : 0,
+            last_used_at: s.last_used_at || null,
+          };
+        });
+        setSkills(normalized);
       } else {
         showToast('Gagal memuat daftar skills dari gateway.', 'error');
       }
@@ -412,14 +452,20 @@ export const SkillsManagerModal: React.FC<SkillsManagerModalProps> = ({ onClose 
   // Filtered Skills
   const filteredSkills = useMemo(() => {
     return skills.filter((skill) => {
+      if (!skill) return false;
+      const tags = Array.isArray(skill.tags) ? skill.tags : [];
+      const tools = Array.isArray(skill.tools) ? skill.tools : [];
+      const auditStatus = skill.audit?.status || 'not_audited';
+      const deps = Array.isArray(skill.dependencies_health) ? skill.dependencies_health : [];
+
       // 1. Text Search
       const query = searchQuery.toLowerCase().trim();
       if (query) {
-        const matchName = skill.name.toLowerCase().includes(query);
-        const matchId = skill.id.toLowerCase().includes(query);
-        const matchDesc = skill.description.toLowerCase().includes(query);
-        const matchTags = skill.tags.some((t) => t.toLowerCase().includes(query));
-        const matchTools = skill.tools.some((t) => t.toLowerCase().includes(query));
+        const matchName = (skill.name || '').toLowerCase().includes(query);
+        const matchId = (skill.id || '').toLowerCase().includes(query);
+        const matchDesc = (skill.description || '').toLowerCase().includes(query);
+        const matchTags = tags.some((t) => t.toLowerCase().includes(query));
+        const matchTools = tools.some((t) => t.toLowerCase().includes(query));
         if (!matchName && !matchId && !matchDesc && !matchTags && !matchTools) {
           return false;
         }
@@ -428,15 +474,15 @@ export const SkillsManagerModal: React.FC<SkillsManagerModalProps> = ({ onClose 
       // 2. Chip Filter
       switch (activeFilter) {
         case 'active':
-          return skill.enabled;
+          return Boolean(skill.enabled);
         case 'inactive':
           return !skill.enabled;
         case 'attention':
           return (
-            skill.audit.status === 'failed' ||
-            skill.audit.status === 'warning' ||
-            skill.audit.status === 'stale' ||
-            skill.dependencies_health.some((d) => d.required && !d.available)
+            auditStatus === 'failed' ||
+            auditStatus === 'warning' ||
+            auditStatus === 'stale' ||
+            deps.some((d) => d.required && !d.available)
           );
         case 'bundled':
           return skill.scope === 'bundled';
@@ -452,8 +498,9 @@ export const SkillsManagerModal: React.FC<SkillsManagerModalProps> = ({ onClose 
   }, [skills, searchQuery, activeFilter]);
 
   // Render Audit Badge
-  const renderAuditBadge = (audit: ScanResult) => {
-    switch (audit.status) {
+  const renderAuditBadge = (audit?: ScanResult) => {
+    const status = audit?.status || 'not_audited';
+    switch (status) {
       case 'passed':
         return (
           <span className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-[#0C2419] text-[#34D399] px-2.5 py-0.5 rounded border border-[#164E33]">
@@ -647,8 +694,12 @@ export const SkillsManagerModal: React.FC<SkillsManagerModalProps> = ({ onClose 
             </div>
           ) : (
             filteredSkills.map((skill) => {
-              const missingDeps = skill.dependencies_health.filter((d) => d.required && !d.available);
-              const isPassed = skill.audit.passed;
+              const deps = Array.isArray(skill.dependencies_health) ? skill.dependencies_health : [];
+              const missingDeps = deps.filter((d) => d.required && !d.available);
+              const isPassed = Boolean(skill.audit?.passed);
+              const auditStatus = skill.audit?.status || 'not_audited';
+              const tags = Array.isArray(skill.tags) ? skill.tags : [];
+              const tools = Array.isArray(skill.tools) ? skill.tools : [];
 
               return (
                 <div
@@ -693,17 +744,17 @@ export const SkillsManagerModal: React.FC<SkillsManagerModalProps> = ({ onClose 
 
                       {/* Tags & Tools */}
                       <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-neutral-400">
-                        {skill.tags.length > 0 && (
+                        {tags.length > 0 && (
                           <div className="flex items-center gap-1.5">
                             <Tag className="w-3 h-3 text-neutral-500" />
-                            <span className="text-neutral-400">{skill.tags.join(', ')}</span>
+                            <span className="text-neutral-400">{tags.join(', ')}</span>
                           </div>
                         )}
-                        {skill.tools.length > 0 && (
+                        {tools.length > 0 && (
                           <div className="flex items-center gap-1.5">
                             <Wrench className="w-3 h-3 text-neutral-500" />
                             <span className="text-neutral-300 font-mono text-[11px]">
-                              Tools: {skill.tools.join(', ')}
+                              Tools: {tools.join(', ')}
                             </span>
                           </div>
                         )}
@@ -715,17 +766,17 @@ export const SkillsManagerModal: React.FC<SkillsManagerModalProps> = ({ onClose 
                       {/* Toggle Switch */}
                       <button
                         title={
-                          skill.audit.status === 'failed'
+                          auditStatus === 'failed'
                             ? 'Skill tidak dapat diaktifkan karena gagal audit keamanan'
                             : skill.enabled
                             ? 'Klik untuk menonaktifkan skill'
                             : 'Klik untuk mengaktifkan skill'
                         }
-                        disabled={skill.audit.status === 'failed'}
+                        disabled={auditStatus === 'failed'}
                         onClick={(e) => toggleSkill(skill.id, skill.enabled, e)}
                         className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                           skill.enabled && isPassed ? 'bg-[#5D5FEF]' : 'bg-[#222734]'
-                        } ${skill.audit.status === 'failed' ? 'opacity-40 cursor-not-allowed' : ''}`}
+                        } ${auditStatus === 'failed' ? 'opacity-40 cursor-not-allowed' : ''}`}
                       >
                         <span
                           className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${

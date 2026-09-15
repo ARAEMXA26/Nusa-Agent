@@ -14,6 +14,7 @@ import { MemoryAndSchedulerModal } from './components/MemoryAndSchedulerModal';
 import { PluginMarketplaceModal } from './components/PluginMarketplaceModal';
 import { ExtensionsMarketplace } from './components/ExtensionsMarketplace';
 import { CommandCenterDashboard } from './components/CommandCenterDashboard';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export const App: React.FC = () => {
   const {
@@ -194,7 +195,11 @@ export const App: React.FC = () => {
 
       {/* Other Modals */}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
-      {showSkills && <SkillsManagerModal onClose={() => setShowSkills(false)} />}
+      {showSkills && (
+        <ErrorBoundary fallbackTitle="Gagal Membuka Skills Hub" onClose={() => setShowSkills(false)}>
+          <SkillsManagerModal onClose={() => setShowSkills(false)} />
+        </ErrorBoundary>
+      )}
       {showMcp && <McpManagerModal onClose={() => setShowMcp(false)} />}
       <BrowserSandboxModal isOpen={showBrowser} onClose={() => setShowBrowser(false)} />
       <MemoryAndSchedulerModal

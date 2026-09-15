@@ -20,9 +20,12 @@ cd "$DESKTOP_DIR"
 npm run build
 npx electron-builder --mac --arm64 --dir
 
-# 2. Kill any currently running instance of Nusa Agent so files can be replaced
-echo "[*] Step 2: Terminating any running instances of Nusa Agent..."
+# 2. Kill any currently running instance of Nusa Agent and old gateway process so files can be replaced and updated
+echo "[*] Step 2: Terminating any running instances of Nusa Agent and stale gateway processes..."
 pkill -f "Nusa Agent" 2>/dev/null || true
+pkill -f "uvicorn nusa.main:app" 2>/dev/null || true
+pkill -f "nusa-gateway" 2>/dev/null || true
+lsof -ti:4141 | xargs kill -9 2>/dev/null || true
 sleep 1
 
 # 3. Cleanly install/replace /Applications/Nusa Agent.app

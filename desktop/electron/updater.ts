@@ -537,23 +537,38 @@ rm -f "${scriptPath}"
   }
 }
 
+let updaterIpcRegistered = false;
+let currentMainWindow: BrowserWindow | null = null;
 let backgroundCheckTimer: NodeJS.Timeout | null = null;
 
 export function registerUpdaterIpc(mainWindow: BrowserWindow | null): void {
+  currentMainWindow = mainWindow;
+
+  if (updaterIpcRegistered) {
+    return;
+  }
+  updaterIpcRegistered = true;
+
+  try {
+    ipcMain.removeHandler('app:get-info');
+    ipcMain.removeHandler('app:check-updates');
+    ipcMain.removeHandler('app:install-update');
+  } catch {}
+
   ipcMain.handle('app:get-info', () => {
     return getAppInfo();
   });
 
   ipcMain.handle('app:check-updates', async () => {
     const result = await checkForUpdates();
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('app:update-result', result);
+    if (currentMainWindow && !currentMainWindow.isDestroyed()) {
+      currentMainWindow.webContents.send('app:update-result', result);
     }
     return result;
   });
 
   ipcMain.handle('app:install-update', async (_event, customUrl?: string) => {
-    return downloadAndInstallUpdate(mainWindow, customUrl);
+    return downloadAndInstallUpdate(currentMainWindow, customUrl);
   });
 
   // Background Automatic Update Checker
@@ -561,8 +576,8 @@ export function registerUpdaterIpc(mainWindow: BrowserWindow | null): void {
   setTimeout(async () => {
     try {
       const res = await checkForUpdates();
-      if (res.updateAvailable && mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('app:update-available', res);
+      if (res.updateAvailable && currentMainWindow && !currentMainWindow.isDestroyed()) {
+        currentMainWindow.webContents.send('app:update-available', res);
       }
     } catch {}
   }, 5000);
@@ -574,8 +589,8 @@ export function registerUpdaterIpc(mainWindow: BrowserWindow | null): void {
   backgroundCheckTimer = setInterval(async () => {
     try {
       const res = await checkForUpdates();
-      if (res.updateAvailable && mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('app:update-available', res);
+      if (res.updateAvailable && currentMainWindow && !currentMainWindow.isDestroyed()) {
+        currentMainWindow.webContents.send('app:update-available', res);
       }
     } catch {}
   }, 30 * 60 * 1000);

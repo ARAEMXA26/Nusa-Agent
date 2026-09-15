@@ -188,6 +188,7 @@ export async function startGatewayProcess(): Promise<void> {
       detached: false,
       env: {
         ...process.env,
+        PYTHONPATH: cwd,
         PYTHONUNBUFFERED: '1',
       },
     });
