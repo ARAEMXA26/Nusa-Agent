@@ -7,7 +7,7 @@ describe('App and Artifacts Panel Integration Flow', () => {
   it('handles full lifecycle: docked -> expanded -> docked -> closed -> reopened via button and shortcut', () => {
     const { container } = render(
       <I18nProvider>
-        <App />
+        <App initialView="tasks" />
       </I18nProvider>
     );
 

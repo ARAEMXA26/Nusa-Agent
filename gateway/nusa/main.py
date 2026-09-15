@@ -20,6 +20,7 @@ from nusa.api import (
     cron_router,
     plugins_router,
     extensions_router,
+    workspace_router,
     websocket_router,
 )
 from nusa.browser.manager import browser_manager
@@ -69,6 +70,7 @@ app.include_router(profiles_router)
 app.include_router(cron_router)
 app.include_router(plugins_router)
 app.include_router(extensions_router)
+app.include_router(workspace_router)
 app.include_router(websocket_router)
 
 

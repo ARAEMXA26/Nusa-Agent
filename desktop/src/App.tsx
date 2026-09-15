@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useGateway } from './hooks/useGateway';
 import { TopBar } from './components/TopBar';
-import { Sidebar } from './components/Sidebar';
+import { Sidebar, SidebarMode, PrimaryView } from './components/Sidebar';
 import { ApprovalsInbox } from './components/ApprovalsInbox';
 import { TaskTimeline } from './components/TaskTimeline';
 import { ArtifactPanel, ArtifactsPanelState } from './components/ArtifactPanel';
@@ -15,8 +15,20 @@ import { PluginMarketplaceModal } from './components/PluginMarketplaceModal';
 import { ExtensionsMarketplace } from './components/ExtensionsMarketplace';
 import { CommandCenterDashboard } from './components/CommandCenterDashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ProjectExplorer } from './components/ProjectExplorer';
+import { CodeWorkspaceEditor, OpenTab } from './components/CodeWorkspaceEditor';
 
-export const App: React.FC = () => {
+export type WorkspaceState =
+  | { status: 'empty' }
+  | { status: 'opening'; requestedPath?: string }
+  | { status: 'open'; workspaceId: string; rootPaths: string[] }
+  | { status: 'error'; message: string };
+
+export interface AppProps {
+  initialView?: PrimaryView;
+}
+
+export const App: React.FC<AppProps> = ({ initialView = 'projects' }) => {
   const {
     connected,
     projects,
@@ -34,8 +46,11 @@ export const App: React.FC = () => {
     respondApproval,
   } = useGateway();
 
-  // Start directly in task mode matching Gambar 1 layout
-  const [viewMode, setViewMode] = useState<'task' | 'dashboard'>('task');
+  // Primary navigation view: 'projects' | 'tasks' | 'home' | 'agents' | 'skills' | 'automations' | 'extensions' | 'settings'
+  // Default to 'projects' for the coding-first IDE experience requested
+  const [primaryView, setPrimaryView] = useState<PrimaryView>(initialView);
+  const [sidebarMode, setSidebarMode] = useState<SidebarMode>(initialView === 'projects' ? 'compact' : 'expanded');
+
   const [showSettings, setShowSettings] = useState(false);
   const [showSkills, setShowSkills] = useState(false);
   const [showMcp, setShowMcp] = useState(false);
@@ -45,14 +60,47 @@ export const App: React.FC = () => {
   const [showExtensions, setShowExtensions] = useState(false);
   const [updateAvailableInfo, setUpdateAvailableInfo] = useState<any>(null);
 
-  // Tri-state panel state: 'docked' | 'expanded' | 'closed'
+  // Workspace Root Path (single source of truth)
+  const defaultRoot = '/Users/ariardianto/Documents/AGENT/CODE';
+  const [workspaceRoot, setWorkspaceRoot] = useState<string>(activeProject?.root_path || defaultRoot);
+  const [_workspaceState, setWorkspaceState] = useState<WorkspaceState>({
+    status: 'open',
+    workspaceId: 'CODE',
+    rootPaths: [defaultRoot],
+  });
+
+  // Editor Tabs
+  const [openTabs, setOpenTabs] = useState<OpenTab[]>([]);
+  const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
+
+  // Tri-state panel state for tasks/chat view: 'docked' | 'expanded' | 'closed'
   const [artifactsPanelState, setArtifactsPanelState] = useState<ArtifactsPanelState>('docked');
   const [lastDockedWidth, setLastDockedWidth] = useState<number>(480);
   const reopenButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Global shortcut to toggle Artifacts panel (Cmd+Option+A / Ctrl+Option+A)
+  // Synchronize workspaceRoot when activeProject changes
+  useEffect(() => {
+    if (activeProject?.root_path) {
+      setWorkspaceRoot(activeProject.root_path);
+      setWorkspaceState({
+        status: 'open',
+        workspaceId: activeProject.name || 'CODE',
+        rootPaths: [activeProject.root_path],
+      });
+    }
+  }, [activeProject?.root_path, activeProject?.name]);
+
+  // Global shortcut: Cmd+B / Ctrl+B to cycle sidebar mode (expanded -> compact -> hidden -> expanded)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        setSidebarMode((prev) => {
+          if (prev === 'expanded') return 'compact';
+          if (prev === 'compact') return 'hidden';
+          return 'expanded';
+        });
+      }
       if ((e.metaKey || e.ctrlKey) && e.altKey && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         setArtifactsPanelState((prev) => (prev === 'closed' ? 'docked' : 'closed'));
@@ -62,6 +110,7 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
+  // Auto-updater listener
   useEffect(() => {
     if ((window as any).nusa?.onUpdateAvailable) {
       (window as any).nusa.onUpdateAvailable((info: any) => {
@@ -72,13 +121,248 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Seed initial tabs matching Gambar 2 (electron-builder.json, ErrorBoundary.tsx, SKILLS_HUB.md, SkillHub.test.tsx)
+  useEffect(() => {
+    const seedTabs = async () => {
+      const initialPaths = [
+        {
+          rel: 'desktop/electron-builder.json',
+          name: 'electron-builder.json',
+          lang: 'json',
+          diag: 3,
+        },
+        {
+          rel: 'desktop/src/components/ErrorBoundary.tsx',
+          name: 'ErrorBoundary.tsx',
+          lang: 'typescript',
+        },
+        {
+          rel: 'SKILLS_HUB.md',
+          name: 'SKILLS_HUB.md',
+          lang: 'markdown',
+        },
+        {
+          rel: 'desktop/src/__tests__/SkillsHub.test.tsx',
+          name: 'SkillHub.test.tsx',
+          lang: 'typescript',
+        },
+      ];
+
+      const tabsData: OpenTab[] = [];
+      for (const item of initialPaths) {
+        const fullPath = `${workspaceRoot}/${item.rel}`;
+        let content = '';
+        try {
+          if ((window as any).nusa?.workspace?.readFile) {
+            const res = await (window as any).nusa.workspace.readFile(fullPath);
+            content = res.content;
+          } else {
+            const resp = await fetch(
+              `http://127.0.0.1:4141/api/workspace/file?path=${encodeURIComponent(fullPath)}`
+            );
+            if (resp.ok) {
+              const data = await resp.json();
+              content = data.content;
+            }
+          }
+        } catch {
+          // Keep empty if not read yet
+        }
+
+        // Default content for electron-builder.json if read failed
+        if (!content && item.rel.includes('electron-builder.json')) {
+          content = `{\n  "appId": "com.nusa.agent",\n  "productName": "Nusa Agent",\n  "target": [\n    {\n      "target": "dir"\n    }\n  ],\n  "category": "Development",\n  "artifactName": "Nusa-Agent-\${version}-linux-\${arch}.\${ext}",\n  "appImage": {\n    "artifactName": "Nusa-Agent-\${version}-linux-\${arch}.AppImage"\n  },\n  "deb": {\n    "artifactName": "Nusa-Agent-\${version}-linux-\${arch}.deb"\n  },\n  "publish": {\n    "provider": "github",\n    "owner": "ARAEMXA26",\n    "repo": "Nusa-Agent"\n  }\n}`;
+        }
+
+        tabsData.push({
+          path: fullPath,
+          name: item.name,
+          relativePath: item.rel,
+          content: content || `// ${item.name}`,
+          originalContent: content || `// ${item.name}`,
+          isDirty: false,
+          language: item.lang,
+          diagnosticsCount: item.diag,
+        });
+      }
+
+      setOpenTabs(tabsData);
+      setActiveTabIndex(0);
+    };
+
+    if (openTabs.length === 0) {
+      seedTabs();
+    }
+  }, [workspaceRoot]);
+
+  // Handle selecting a file from Project Explorer
+  const handleSelectFile = useCallback(
+    async (filePath: string, relativePath: string) => {
+      const existingIndex = openTabs.findIndex((t) => t.path === filePath);
+      if (existingIndex >= 0) {
+        setActiveTabIndex(existingIndex);
+        return;
+      }
+
+      let content = '';
+      try {
+        if ((window as any).nusa?.workspace?.readFile) {
+          const res = await (window as any).nusa.workspace.readFile(filePath);
+          content = res.content;
+        } else {
+          const resp = await fetch(
+            `http://127.0.0.1:4141/api/workspace/file?path=${encodeURIComponent(filePath)}`
+          );
+          if (resp.ok) {
+            const data = await resp.json();
+            content = data.content;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to read file:', err);
+      }
+
+      const fileName = filePath.split('/').pop() || 'Untitled';
+      const ext = fileName.split('.').pop()?.toLowerCase() || '';
+      const language =
+        ext === 'json'
+          ? 'json'
+          : ext === 'ts' || ext === 'tsx'
+          ? 'typescript'
+          : ext === 'js' || ext === 'jsx'
+          ? 'javascript'
+          : ext === 'md'
+          ? 'markdown'
+          : ext === 'css'
+          ? 'css'
+          : ext === 'html'
+          ? 'html'
+          : ext === 'py'
+          ? 'python'
+          : ext === 'sh'
+          ? 'shell'
+          : 'text';
+
+      const newTab: OpenTab = {
+        path: filePath,
+        name: fileName,
+        relativePath: relativePath,
+        content: content,
+        originalContent: content,
+        isDirty: false,
+        language: language,
+      };
+
+      setOpenTabs((prev) => [...prev, newTab]);
+      setActiveTabIndex(openTabs.length);
+    },
+    [openTabs]
+  );
+
+  // Handle updating editor tab content
+  const handleUpdateContent = useCallback((index: number, newContent: string) => {
+    setOpenTabs((prev) => {
+      const updated = [...prev];
+      if (updated[index]) {
+        updated[index] = {
+          ...updated[index],
+          content: newContent,
+          isDirty: newContent !== updated[index].originalContent,
+        };
+      }
+      return updated;
+    });
+  }, []);
+
+  // Handle saving file to disk
+  const handleSaveFile = useCallback(
+    async (index: number) => {
+      const tab = openTabs[index];
+      if (!tab) return;
+      try {
+        if ((window as any).nusa?.workspace?.writeFile) {
+          await (window as any).nusa.workspace.writeFile(tab.path, tab.content);
+        } else {
+          await fetch('http://127.0.0.1:4141/api/workspace/file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file_path: tab.path, content: tab.content }),
+          });
+        }
+        setOpenTabs((prev) => {
+          const updated = [...prev];
+          if (updated[index]) {
+            updated[index] = {
+              ...updated[index],
+              originalContent: tab.content,
+              isDirty: false,
+            };
+          }
+          return updated;
+        });
+      } catch (err) {
+        console.error('Error saving file:', err);
+      }
+    },
+    [openTabs]
+  );
+
+  // Handle closing a tab
+  const handleCloseTab = useCallback(
+    (index: number) => {
+      setOpenTabs((prev) => {
+        const updated = prev.filter((_, i) => i !== index);
+        if (activeTabIndex >= updated.length) {
+          setActiveTabIndex(Math.max(0, updated.length - 1));
+        }
+        return updated;
+      });
+    },
+    [activeTabIndex]
+  );
+
+  // Handle native folder picker
+  const handleOpenFolderPicker = useCallback(async () => {
+    try {
+      if ((window as any).nusa?.workspace?.openFolder) {
+        const picked = await (window as any).nusa.workspace.openFolder();
+        if (picked && !picked.canceled && picked.path) {
+          setWorkspaceRoot(picked.path);
+          setWorkspaceState({
+            status: 'open',
+            workspaceId: picked.path.split('/').pop() || 'workspace',
+            rootPaths: [picked.path],
+          });
+          // Notify gateway
+          fetch('http://127.0.0.1:4141/api/workspace/open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ root_path: picked.path }),
+          }).catch(() => {});
+        }
+      } else {
+        const entered = prompt('Masukkan direktori project:', workspaceRoot);
+        if (entered) {
+          setWorkspaceRoot(entered);
+          fetch('http://127.0.0.1:4141/api/workspace/open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ root_path: entered }),
+          }).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.error('Error opening folder picker:', err);
+    }
+  }, [workspaceRoot]);
+
   const handleSelectTask = (taskId: string) => {
     fetchTaskDetail(taskId);
-    setViewMode('task');
+    setPrimaryView('tasks');
   };
 
   const handleSelectDashboard = () => {
-    setViewMode('dashboard');
+    setPrimaryView('home');
   };
 
   const handleCreateTask = async (goal: string) => {
@@ -88,45 +372,52 @@ export const App: React.FC = () => {
         projId = projects[0].id;
         setActiveProject(projects[0]);
       } else {
-        const created = await createProject('Workspace', '/Users/ariardianto/Documents/AGENT');
+        const created = await createProject('Workspace', workspaceRoot);
         projId = created.id;
       }
     }
     if (projId) {
       await createTask(projId, goal);
-      setViewMode('task');
+      setPrimaryView('tasks');
     }
   };
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#0A0C0E] font-sans text-neutral-100 antialiased select-none">
-      {/* Top Header Bar matching Gambar 1 */}
+      {/* Top Header Bar */}
       <TopBar
-        workspaceName="Workspace / Growth"
+        workspaceName={
+          primaryView === 'projects'
+            ? `Workspace / ${workspaceRoot.split('/').pop() || 'CODE'}`
+            : 'Workspace / Growth'
+        }
         modelName="Nusa-1 (Latest)"
         isSandboxed={true}
         tokenCount="12.4K tokens"
         cost="$0.03"
-        isArtifactsClosed={artifactsPanelState === 'closed'}
+        isArtifactsClosed={primaryView === 'projects' ? true : artifactsPanelState === 'closed'}
         onOpenArtifacts={() => setArtifactsPanelState('docked')}
       />
 
-      {/* Main 3-Column Layout: Left Sidebar, Center Mission & Editor, Right Website Preview & Artifacts */}
+      {/* Main Container */}
       <div className="flex flex-1 min-h-0 w-full overflow-hidden">
-        {/* Left Sidebar */}
+        {/* Left Sidebar (Supports Expanded 256px, Compact Activity Rail 48px, or Hidden 0px) */}
         <Sidebar
           connected={connected}
+          sidebarMode={sidebarMode}
+          onSidebarModeChange={setSidebarMode}
+          primaryView={primaryView}
+          onSelectPrimaryView={setPrimaryView}
           projects={projects}
           activeProject={activeProject}
           setActiveProject={setActiveProject}
           tasks={tasks}
-          activeTaskId={viewMode === 'task' ? activeTask?.id || 'demo-task' : null}
+          activeTaskId={primaryView === 'tasks' ? activeTask?.id || 'demo-task' : null}
           onSelectTask={handleSelectTask}
           onSelectDashboard={handleSelectDashboard}
+          onSelectProjects={() => setPrimaryView('projects')}
           onCreateProject={(name, path) => createProject(name, path)}
-          onOpenNewTask={() => {
-            setViewMode('task');
-          }}
+          onOpenNewTask={() => setPrimaryView('tasks')}
           onOpenSettings={() => setShowSettings(true)}
           onOpenSkills={() => setShowSkills(true)}
           onOpenMcp={() => setShowMcp(true)}
@@ -134,10 +425,42 @@ export const App: React.FC = () => {
           onOpenMemory={() => setShowMemory(true)}
           onOpenPlugins={() => setShowPlugins(true)}
           onOpenExtensions={() => setShowExtensions(true)}
+          onOpenSearch={() => setPrimaryView('projects')}
+          onOpenSourceControl={() => setPrimaryView('projects')}
         />
 
-        {/* Center Section: Dashboard or Task Timeline (with Conversation & Antigravity Code Editor) */}
-        {viewMode === 'dashboard' ? (
+        {/* ------------------------------------------------------------- */}
+        {/* CODING-FIRST PROJECTS VIEW: Project Explorer + Source Editor  */}
+        {/* (Artifacts and Command Center completely omitted from DOM)    */}
+        {/* ------------------------------------------------------------- */}
+        {primaryView === 'projects' ? (
+          <div className="flex flex-1 min-w-0 h-full overflow-hidden">
+            {/* Column 2: Project Explorer (Resizable, lazy loading, real tree) */}
+            <ProjectExplorer
+              rootPath={workspaceRoot}
+              projectName={workspaceRoot.split('/').pop() || 'CODE'}
+              activeFilePath={openTabs[activeTabIndex]?.path || null}
+              onSelectFile={handleSelectFile}
+              onOpenFolderPicker={handleOpenFolderPicker}
+              onSelectRecentProject={(path) => setWorkspaceRoot(path)}
+              onCloseFolder={() => setWorkspaceRoot('')}
+            />
+
+            {/* Column 3: Source Code Editor (Takes all remaining width to right window edge) */}
+            <CodeWorkspaceEditor
+              tabs={openTabs}
+              activeTabIndex={activeTabIndex}
+              onSelectTab={setActiveTabIndex}
+              onCloseTab={handleCloseTab}
+              onUpdateContent={handleUpdateContent}
+              onSaveFile={handleSaveFile}
+              rootPath={workspaceRoot}
+              onOpenFolderPicker={handleOpenFolderPicker}
+              className="flex-1 min-w-0"
+            />
+          </div>
+        ) : primaryView === 'home' ? (
+          /* Command Center Dashboard View */
           <CommandCenterDashboard
             connected={connected}
             projects={projects}
@@ -155,39 +478,40 @@ export const App: React.FC = () => {
             onOpenNewProjectModal={() => setShowSettings(true)}
           />
         ) : (
-          <main className="flex-1 flex flex-col h-full min-w-0 bg-[#0E1013]">
-            {/* Approvals Inbox if any */}
-            <ApprovalsInbox
-              approvals={approvals}
-              onRespond={(apprId, decision) => respondApproval(apprId, decision)}
-            />
+          /* Tasks & Agent Conversation View with right Artifacts panel */
+          <>
+            <main className="flex-1 flex flex-col h-full min-w-0 bg-[#0E1013]">
+              <ApprovalsInbox
+                approvals={approvals}
+                onRespond={(apprId, decision) => respondApproval(apprId, decision)}
+              />
 
-            {/* Task Timeline matching Gambar 1 & Antigravity editor tab matching Gambar 3 */}
-            <TaskTimeline
-              activeTask={activeTask}
-              onSteer={(msg) => activeTask && steerTask(activeTask.id, msg)}
-              onCancel={() => activeTask && cancelTask(activeTask.id)}
-              onCreateTask={(goal) => activeProject && createTask(activeProject.id, goal)}
-              onBackToDashboard={handleSelectDashboard}
-              isArtifactsClosed={artifactsPanelState === 'closed'}
-              onOpenArtifacts={() => setArtifactsPanelState('docked')}
+              <TaskTimeline
+                activeTask={activeTask}
+                onSteer={(msg) => activeTask && steerTask(activeTask.id, msg)}
+                onCancel={() => activeTask && cancelTask(activeTask.id)}
+                onCreateTask={(goal) => activeProject && createTask(activeProject.id, goal)}
+                onBackToDashboard={handleSelectDashboard}
+                isArtifactsClosed={artifactsPanelState === 'closed'}
+                onOpenArtifacts={() => setArtifactsPanelState('docked')}
+                reopenButtonRef={reopenButtonRef}
+              />
+            </main>
+
+            {/* Right Section: Artifacts & Live Website Preview */}
+            <ArtifactPanel
+              artifacts={artifacts}
+              panelState={artifactsPanelState}
+              onPanelStateChange={setArtifactsPanelState}
+              lastDockedWidth={lastDockedWidth}
+              onDockedWidthChange={setLastDockedWidth}
               reopenButtonRef={reopenButtonRef}
             />
-          </main>
+          </>
         )}
-
-        {/* Right Section: Artifacts & Live Website Preview matching Gambar 1 */}
-        <ArtifactPanel
-          artifacts={artifacts}
-          panelState={artifactsPanelState}
-          onPanelStateChange={setArtifactsPanelState}
-          lastDockedWidth={lastDockedWidth}
-          onDockedWidthChange={setLastDockedWidth}
-          reopenButtonRef={reopenButtonRef}
-        />
       </div>
 
-      {/* Extensions Marketplace Modal matching Gambar 2 */}
+      {/* Extensions Marketplace Modal */}
       <ExtensionsMarketplace
         isOpen={showExtensions}
         onClose={() => setShowExtensions(false)}

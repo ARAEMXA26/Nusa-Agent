@@ -14,10 +14,12 @@ from nusa.api.routes_profiles import router as profiles_router
 from nusa.api.routes_cron import router as cron_router
 from nusa.api.routes_plugins import router as plugins_router
 from nusa.api.routes_extensions import router as extensions_router
+from nusa.api.routes_workspace import router as workspace_router
 from nusa.api.websocket import router as websocket_router
 
 __all__ = [
     "projects_router",
+    "workspace_router",
     "tasks_router",
     "approvals_router",
     "artifacts_router",

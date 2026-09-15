@@ -14,6 +14,17 @@ contextBridge.exposeInMainWorld('nusa', {
   onUpdateResult: (callback: (result: any) => void) => {
     ipcRenderer.on('app:update-result', (_event, result) => callback(result));
   },
+  workspace: {
+    openFolder: () => ipcRenderer.invoke('workspace:open-folder'),
+    readDir: (dirPath: string) => ipcRenderer.invoke('workspace:read-dir', dirPath),
+    readFile: (filePath: string) => ipcRenderer.invoke('workspace:read-file', filePath),
+    writeFile: (filePath: string, content: string) => ipcRenderer.invoke('workspace:write-file', filePath, content),
+    createFile: (filePath: string) => ipcRenderer.invoke('workspace:create-file', filePath),
+    createFolder: (dirPath: string) => ipcRenderer.invoke('workspace:create-folder', dirPath),
+    renameItem: (oldPath: string, newPath: string) => ipcRenderer.invoke('workspace:rename-item', oldPath, newPath),
+    deleteItem: (targetPath: string) => ipcRenderer.invoke('workspace:delete-item', targetPath),
+    revealInFinder: (targetPath: string) => ipcRenderer.invoke('workspace:reveal-in-finder', targetPath),
+  },
   send: (channel: string, data: any) => {
     const validChannels = ['toGateway', 'openDirectoryDialog'];
     if (validChannels.includes(channel)) {
