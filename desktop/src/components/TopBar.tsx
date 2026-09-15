@@ -29,21 +29,15 @@ export const TopBar: React.FC<TopBarProps> = ({
   onStop,
 }) => {
   return (
-    <header className="h-12 bg-[#0C0E12] border-b border-neutral-800/80 px-4 flex items-center justify-between select-none shrink-0 z-20">
-      {/* Left items matching Gambar 1 */}
-      <div className="flex items-center gap-5">
-        {/* Brand with vector star */}
-        <div className="flex items-center gap-2">
-          {/* Custom vector star icon matching Gambar 1 */}
-          <div className="w-5 h-5 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2]">
-              <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" />
-              <path d="M12 7L13.5 10.5L17 12L13.5 13.5L12 17L10.5 13.5L7 12L10.5 10.5L12 7Z" fill="white" />
-            </svg>
-          </div>
-          <span className="font-bold text-sm text-white tracking-wider">NUSA AGENT</span>
-        </div>
-
+    <header 
+      style={{ WebkitAppRegion: 'drag' } as any}
+      className="h-12 bg-[#0C0E12] border-b border-neutral-800/80 px-4 flex items-center justify-between select-none shrink-0 z-20"
+    >
+      {/* Left items: macOS window traffic light clearance + Workspace & Model selectors */}
+      <div 
+        style={{ WebkitAppRegion: 'no-drag' } as any}
+        className="flex items-center gap-4 pl-20"
+      >
         {/* Workspace Dropdown Selector */}
         <div className="flex items-center gap-1 text-xs text-neutral-300 hover:text-white cursor-pointer px-2 py-1 rounded hover:bg-neutral-800/60 transition-colors">
           <span className="font-medium">{workspaceName}</span>
@@ -66,7 +60,10 @@ export const TopBar: React.FC<TopBarProps> = ({
       </div>
 
       {/* Right items matching Gambar 1 */}
-      <div className="flex items-center gap-4 text-xs">
+      <div 
+        style={{ WebkitAppRegion: 'no-drag' } as any}
+        className="flex items-center gap-4 text-xs"
+      >
         {/* Token Count */}
         <span className="text-neutral-400 font-medium">{tokenCount}</span>
 
