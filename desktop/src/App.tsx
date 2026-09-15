@@ -42,7 +42,6 @@ export const App: React.FC = () => {
   const [showMemory, setShowMemory] = useState(false);
   const [showPlugins, setShowPlugins] = useState(false);
   const [showExtensions, setShowExtensions] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [updateAvailableInfo, setUpdateAvailableInfo] = useState<any>(null);
 
   useEffect(() => {
@@ -90,12 +89,6 @@ export const App: React.FC = () => {
         isSandboxed={true}
         tokenCount="12.4K tokens"
         cost="$0.03"
-        isPaused={isPaused}
-        onTogglePause={() => setIsPaused(!isPaused)}
-        onStop={() => {
-          if (activeTask) cancelTask(activeTask.id);
-          alert('Agents execution stopped.');
-        }}
       />
 
       {/* Main 3-Column Layout: Left Sidebar, Center Mission & Editor, Right Website Preview & Artifacts */}
