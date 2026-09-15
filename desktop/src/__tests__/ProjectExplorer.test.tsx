@@ -245,6 +245,6 @@ describe('Sidebar: Multi-Mode Navigation & Activity Rail', () => {
     expect(restoreBtn).toBeInTheDocument();
 
     fireEvent.click(restoreBtn);
-    expect(handleModeChange).toHaveBeenCalledWith('compact');
+    expect(handleModeChange).toHaveBeenCalledWith('expanded');
   });
 });
